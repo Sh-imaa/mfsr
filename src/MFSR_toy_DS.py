@@ -41,6 +41,7 @@ class MFSRDataSet(Dataset):
     def __init__(self, data, views=2, max_view=False,
                  blur=True, to_grey=False, homography=False):
         super().__init__()
+        # same set of images whenever an instantiation happens
         numpy.random.seed(29)
         random.seed(29)
         self.data = data
