@@ -2,3 +2,5 @@ __pycache__
 *.pyc
 data/
 notebooks/
+*/tb_logs/
+*/models/
