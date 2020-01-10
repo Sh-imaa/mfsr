@@ -1,6 +1,7 @@
 __pycache__
 *.pyc
 data/
+images/
 notebooks/
 */tb_logs/
 */models/

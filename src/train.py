@@ -3,13 +3,13 @@
 import json
 import os
 import datetime
+import argparse
 import numpy as np
 from sklearn.model_selection import train_test_split
 from tqdm import tqdm
 
 import torch
 import torch.optim as optim
-import argparse
 from torch import nn
 from torch.utils.data import DataLoader
 from torch.utils.data.sampler import SubsetRandomSampler
@@ -130,6 +130,7 @@ def trainAndGetBestModel(fusion_model, regis_model, optimizer, dataloaders, base
 
     subfolder_pattern = 'batch_{}_views_{}_min_{}_beta_{}_time_{}'.format(
         batch_size, n_views, min_L, beta, f"{datetime.datetime.now():%Y-%m-%d-%H-%M-%S-%f}")
+    subfolder_pattern += f"_{config["paths"]["tag"]}"
 
     checkpoint_dir_run = os.path.join(config["paths"]["checkpoint_dir"], subfolder_pattern)
     checkpoint_dir_run = env_to_path(checkpoint_dir_run)
