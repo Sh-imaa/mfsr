@@ -2,10 +2,15 @@
   "paths": {
     "prefix": "../data/probav_data/",
     "checkpoint_dir": "models/weights",
-    "tb_log_file_dir": "tb_logs/",
-    "tag": "random_run"
+    "tb_log_file_dir": "tb_logs/"
   },
 
+  "misc": {
+    "tag": "random_run",
+    "cluster": false
+  }
+  
+  ,
   "network": {
     "encoder": {
       "dropout": 0.5,

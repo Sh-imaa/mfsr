@@ -107,6 +107,10 @@ def get_crop_mask(patch_size, crop_size):
     torch_mask = torch.from_numpy(mask).type(torch.FloatTensor)
     return torch_mask
 
+def iterate(iter, cluster=False):
+    if cluster:
+        return iter
+    return tqdm(iter)
 
 def trainAndGetBestModel(fusion_model, regis_model, optimizer, dataloaders, baseline_cpsnrs, config):
     """
@@ -128,9 +132,11 @@ def trainAndGetBestModel(fusion_model, regis_model, optimizer, dataloaders, base
     min_L = config["training"]["min_L"]  # minimum number of views
     beta = config["training"]["beta"]
 
+    cluster = config["misc"]["cluster"]
+
     subfolder_pattern = 'batch_{}_views_{}_min_{}_beta_{}_time_{}'.format(
         batch_size, n_views, min_L, beta, f"{datetime.datetime.now():%Y-%m-%d-%H-%M-%S-%f}")
-    subfolder_pattern += f'_{config["paths"]["tag"]}'
+    subfolder_pattern += f'_{config["misc"]["tag"]}'
 
     checkpoint_dir_run = os.path.join(config["paths"]["checkpoint_dir"], subfolder_pattern)
     checkpoint_dir_run = env_to_path(checkpoint_dir_run)
@@ -159,7 +165,7 @@ def trainAndGetBestModel(fusion_model, regis_model, optimizer, dataloaders, base
     scheduler = lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=config['training']['lr_decay'],
                                                verbose=True, patience=config['training']['lr_step'])
 
-    for epoch in tqdm(range(1, num_epochs + 1)):
+    for epoch in iterate(range(1, num_epochs + 1), cluster=cluster):
 
         # Train
         fusion_model.train()
@@ -167,7 +173,7 @@ def trainAndGetBestModel(fusion_model, regis_model, optimizer, dataloaders, base
         train_loss = 0.0  # monitor train loss
 
         # Iterate over data.
-        for lrs, alphas, hrs, hr_maps, names in tqdm(dataloaders['train']):
+        for lrs, alphas, hrs, hr_maps, names in iterate(dataloaders['train'], cluster=cluster):
 
             optimizer.zero_grad()  # zero the parameter gradients
             lrs = lrs.float().to(device)
