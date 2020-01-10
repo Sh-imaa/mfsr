@@ -12,6 +12,7 @@ import torch.optim as optim
 import argparse
 from torch import nn
 from torch.utils.data import DataLoader
+from torch.utils.data.sampler import SubsetRandomSampler
 from torch.optim import lr_scheduler
 
 from DeepNetworks.HRNet import HRNet
@@ -270,21 +271,28 @@ def main(config):
     n_views = config["training"]["n_views"]
     min_L = config["training"]["min_L"]  # minimum number of views
     beta = config["training"]["beta"]
+    data_limit = config["training"]["data_limit"]
+    
+    if data_limit == -1:
+        sampler, shuffle = None, train_opts["shuffle"]
+    else:
+        sampler, shuffle = SubsetRandomSampler(range(data_limit)), False
+
 
     train_dataset = ImagesetDataset(imset_dir=train_list, config=config["training"],
                                     top_k=n_views, beta=beta)
     train_dataloader = DataLoader(train_dataset, batch_size=batch_size,
-                                  shuffle=True, num_workers=n_workers,
+                                  shuffle=shuffle, num_workers=n_workers,
                                   collate_fn=collateFunction(min_L=min_L),
-                                  pin_memory=True)
+                                  pin_memory=True, sampler=sampler)
 
     config["training"]["create_patches"] = False
     val_dataset = ImagesetDataset(imset_dir=val_list, config=config["training"],
                                   top_k=n_views, beta=beta)
     val_dataloader = DataLoader(val_dataset, batch_size=1,
-                                shuffle=False, num_workers=n_workers,
+                                shuffle=shuffle, num_workers=n_workers,
                                 collate_fn=collateFunction(min_L=min_L),
-                                pin_memory=True)
+                                pin_memory=True, sampler=sampler)
 
     dataloaders = {'train': train_dataloader, 'val': val_dataloader}
 

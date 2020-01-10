@@ -151,7 +151,7 @@ class Decoder(nn.Module):
         
         super(Decoder, self).__init__()
 
-        p = config["dropout"]
+        dr = config["dropout"]
         self.deconv = nn.Sequential(nn.ConvTranspose2d(in_channels=config["deconv"]["in_channels"],
                                                        out_channels=config["deconv"]["out_channels"],
                                                        kernel_size=config["deconv"]["kernel_size"],
