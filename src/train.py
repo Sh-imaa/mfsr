@@ -130,7 +130,7 @@ def trainAndGetBestModel(fusion_model, regis_model, optimizer, dataloaders, base
 
     subfolder_pattern = 'batch_{}_views_{}_min_{}_beta_{}_time_{}'.format(
         batch_size, n_views, min_L, beta, f"{datetime.datetime.now():%Y-%m-%d-%H-%M-%S-%f}")
-    subfolder_pattern += f"_{config["paths"]["tag"]}"
+    subfolder_pattern += f'_{config["paths"]["tag"]}'
 
     checkpoint_dir_run = os.path.join(config["paths"]["checkpoint_dir"], subfolder_pattern)
     checkpoint_dir_run = env_to_path(checkpoint_dir_run)
