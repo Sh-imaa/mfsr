@@ -53,6 +53,7 @@
 
     "load_lr_maps": false,
     "beta": 50.0,
+    "lr_weights": "routing",
 
     "create_patches": true,
     "patch_size": 64,

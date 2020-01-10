@@ -48,11 +48,11 @@ class ImageSet(OrderedDict):
         return dict_info
 
 
-def sample_clearest(clearances, n=None, beta=50, seed=None):
+def sample_clearest(weights, n=None, beta=50, seed=None):
     """
     Given a set of clearances, samples `n` indices with probability proportional to their clearance.
     Args:
-        clearances: numpy.ndarray, clearance scores
+        weights: numpy.ndarray, goodnes scores
         n: int, number of low-res views to read
         beta: float, inverse temperature. beta 0 = uniform sampling. beta +infinity = argmax.
         seed: int, random seed
@@ -62,15 +62,21 @@ def sample_clearest(clearances, n=None, beta=50, seed=None):
     
     if seed is not None:
         np.random.seed(seed)
+    weights = weights.squeeze()
         
-    e_c = np.exp(beta * clearances / clearances.max()) ##### FIXME: This is numerically unstable. 
-    p = e_c / e_c.sum()
+    e_c = np.exp(beta * weights / weights.max()) ##### FIXME: This is numerically unstable. 
+    p = []
+    e_c_sum = e_c.sum()
+    p = e_c / e_c_sum
+    nans_num = np.isnan(p).sum()
+    if nans_num > 0:
+        p[np.isnan(p)] = 1 / nans_num
     idx = range(len(p))
     i_sample = np.random.choice(idx, size=n, p=p, replace=False)
     return i_sample
 
-
-def read_imageset(imset_dir, create_patches=False, patch_size=64, seed=None, top_k=None, beta=0.):
+def read_imageset(imset_dir, create_patches=False, patch_size=64, seed=None,
+                  top_k=None, beta=0., lr_weights="random"):
     """
     Retrieves all assets from the given directory.
     Args:
@@ -78,41 +84,54 @@ def read_imageset(imset_dir, create_patches=False, patch_size=64, seed=None, top
         create_patches: bool, samples a random patch or returns full image (default).
         patch_size: int, size of low-res patch.
         top_k: int, number of low-res views to read.
-            If top_k = None (default), low-views are loaded in the order of clearance.
-            Otherwise, top_k views are sampled with probability proportional to their clearance.
-        beta: float, parameter for random sampling of a reference proportional to its clearance.
+            If top_k = None (default), low-views are loaded in the order of goodness scores.
+            Otherwise, top_k views are sampled with probability proportional to their goodnes.
+        beta: float, parameter for random sampling of a reference proportional to its goodnes.
         load_lr_maps: bool, reads the status maps for the LR views (default=True).
+        lr_weights: str, how to sample lrs
     Returns:
         dict, collection of the following assets:
           - name: str, imageset name.
           - lr: numpy.ndarray, low-res images.
           - hr: high-res image.
           - hr_map: high-res status map.
-          - clearances: precalculated average clearance (see save_clearance.py)
+          - weight: precalculated average goodness scores
     """
 
     # Read asset names
     idx_names = np.array([basename(path)[2:-4] for path in glob.glob(join(imset_dir, 'QM*.png'))])
     idx_names = np.sort(idx_names)
     
-    clearances = np.zeros(len(idx_names))
-    if isfile(join(imset_dir, 'clearance.npy')):
-        try:
-            clearances = np.load(join(imset_dir, 'clearance.npy'))  # load clearance scores
-        except Exception as e:
-            print("please call the save_clearance.py before call DataLoader")
-            print(e)
-    else:
-        raise Exception("please call the save_clearance.py before call DataLoader")
+    # default is random, where every LR gets equal weight (np.ones)
+    weights = np.ones(len(idx_names))
+    if lr_weights == "clearance":
+        if isfile(join(imset_dir, 'clearance.npy')):
+            try:
+                weights = np.load(join(imset_dir, 'clearance.npy'))  # load clearance scores
+            except Exception as e:
+                print("please call save_clearance.py before calling DataLoader")
+                print(e)
+        else:
+            raise Exception("please call save_clearance.py before calling DataLoader")
+
+    elif lr_weights == "routing":
+        if isfile(join(imset_dir, 'routing_weights.npy')):
+            try:
+                weights = np.load(join(imset_dir, 'routing_weights.npy'))  # load clearance scores
+            except Exception as e:
+                print("please call routing.py before calling DataLoader")
+                print(e)
+        else:
+            raise Exception("please call routing.py before calling DataLoader")
 
     if top_k is not None and top_k > 0:
         top_k = min(top_k, len(idx_names))
-        i_samples = sample_clearest(clearances, n=top_k, beta=beta, seed=seed)
+        i_samples = sample_clearest(weights, n=top_k, beta=beta, seed=seed)
         idx_names = idx_names[i_samples]
-        clearances = clearances[i_samples]
+        weights = weights[i_samples]
     else:
-        i_clear_sorted = np.argsort(clearances)[::-1]  # max to min
-        clearances = clearances[i_clear_sorted]
+        i_clear_sorted = np.argsort(weights)[::-1]  # max to min
+        weights = weights[i_clear_sorted]
         idx_names = idx_names[i_clear_sorted]
 
     lr_images = np.array([io.imread(join(imset_dir, f'LR{i}.png')) for i in idx_names], dtype=np.uint16)
@@ -142,7 +161,7 @@ def read_imageset(imset_dir, create_patches=False, patch_size=64, seed=None, top
                         lr=np.array(lr_images),
                         hr=hr,
                         hr_map=hr_map,
-                        clearances=clearances,
+                        weights=weights,
                         )
 
     return imageset
@@ -163,6 +182,7 @@ class ImagesetDataset(Dataset):
         self.seed = seed  # seed for random patches
         self.top_k = top_k
         self.beta = beta
+        self.lr_weights = config["lr_weights"]
         
     def __len__(self):
         return len(self.imset_dir)        
@@ -180,11 +200,12 @@ class ImagesetDataset(Dataset):
             raise KeyError('index must be int, string, or slice')
 
         imset = [read_imageset(imset_dir=dir_,
-                                  create_patches=self.create_patches,
-                                  patch_size=self.patch_size,
-                                  seed=self.seed,
-                                  top_k=self.top_k,
-                                  beta=self.beta,)
+                               create_patches=self.create_patches,
+                               patch_size=self.patch_size,
+                               seed=self.seed,
+                               top_k=self.top_k,
+                               beta=self.beta,
+                               lr_weights=self.lr_weights)
                     for dir_ in tqdm(imset_dir, disable=(len(imset_dir) < 11))]
 
         if len(imset) == 1:

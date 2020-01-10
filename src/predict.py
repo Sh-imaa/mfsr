@@ -48,6 +48,40 @@ def get_sr_and_score(imset, model, min_L=16):
 
     return sr, scPSNR
 
+def get_lr_encodings(imset, model, min_L=16):
+    '''
+    Get endosings of an imset with a given model.
+    Args:
+        imset: imageset
+        model: HRNet, pytorch model
+        min_L: int, pad length
+    Returns:
+        encodings: tensor (1, L, C, W, H) encodings
+    '''
+    
+    if imset.__class__ is ImageSet:
+        collator = collateFunction(min_L=min_L, train_batch=False)
+        lrs, alphas, hrs, hr_maps, names = collator([imset])
+    elif isinstance(imset, tuple):  # imset is a tuple of batches
+        lrs, alphas, hrs, hr_maps, names = imset
+
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    lrs = lrs.float().to(device)
+    alphas = alphas.float().to(device)
+
+    batch_size, seq_len, heigth, width = lrs.shape
+    lrs = lrs.view(-1, seq_len, 1, heigth, width)
+    alphas = alphas.view(-1, seq_len, 1, 1, 1)
+
+    refs, _ = torch.median(lrs[:, :9], 1, keepdim=True)  # reference image aka anchor, shared across multiple views
+    refs = refs.repeat(1, seq_len, 1, 1, 1)
+    stacked_input = torch.cat([lrs, refs], 2) # tensor (B, L, 2*C_in, W, H)
+        
+    stacked_input = stacked_input.view(batch_size * seq_len, 2, width, heigth)
+    encodings = model.encode(stacked_input)
+    encodings = encodings.detach().cpu().numpy()
+
+    return encodings
 
 def load_data(config_file_path, val_proportion=0.10, top_k=-1):
     '''

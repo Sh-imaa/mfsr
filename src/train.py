@@ -227,6 +227,7 @@ def trainAndGetBestModel(fusion_model, regis_model, optimizer, dataloaders, base
         writer.add_image('SR Image', (srs[0] - np.min(srs[0])) / np.max(srs[0]), epoch, dataformats='HW')
         error_map = hrs[0] - srs[0]
         writer.add_image('Error Map', error_map, epoch, dataformats='HW')
+        writer.add_image('HR Image', hrs[0], epoch, dataformats='HW')
         writer.add_scalar("train/loss", train_loss, epoch)
         writer.add_scalar("train/val_loss", val_score, epoch)
         scheduler.step(val_score)
@@ -274,7 +275,7 @@ def main(config):
     data_limit = config["training"]["data_limit"]
     
     if data_limit == -1:
-        sampler, shuffle = None, train_opts["shuffle"]
+        sampler, shuffle = None, True
     else:
         sampler, shuffle = SubsetRandomSampler(range(data_limit)), False
 
