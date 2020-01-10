@@ -18,5 +18,5 @@ unzip $SLURM_TMPDIR/probav_data.zip -d $SLURM_TMPDIR
 
 module load singularity/3.4
 cd $HOME/mfsr/src
-singularity exec --bind $SLURM_TMPDIR /scratch/shimaa/images/mfsr.sif python3 train.py --config ../cluster/c_config.json
+singularity exec --bind $SLURM_TMPDIR,$SCRATCH /scratch/shimaa/images/mfsr.sif python3 train.py --config ../cluster/c_config.json
 
