@@ -14,7 +14,7 @@
 # this assumes you have the raw_data on your scratch space,
 # if it doesn't, you can copy it from /scratch/shimaa (everyone has read access)
 cp $SCRATCH/data/probav_data.zip $SLURM_TMPDIR
-unzip $SLURM_TMPDIR/raw_glaciers_data.zip -d $SLURM_TMPDIR
+unzip $SLURM_TMPDIR/probav_data.zip -d $SLURM_TMPDIR
 
 module load singularity/3.4
 cd $HOME/mfsr/src

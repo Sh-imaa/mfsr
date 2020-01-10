@@ -234,6 +234,7 @@ def trainAndGetBestModel(fusion_model, regis_model, optimizer, dataloaders, base
         writer.add_image('HR Image', hrs[0], epoch, dataformats='HW')
         writer.add_scalar("train/loss", train_loss, epoch)
         writer.add_scalar("train/val_loss", val_score, epoch)
+        print(f'training loss: {train_loss}, val loss: {val_score}')
         scheduler.step(val_score)
     writer.close()
 
