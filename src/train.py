@@ -203,7 +203,7 @@ def trainAndGetBestModel(fusion_model, regis_model, optimizer, dataloaders, base
             optimizer.step()
             epoch_loss = loss.detach().cpu().numpy() * len(hrs) / len(dataloaders['train'].dataset)
             train_loss += epoch_loss
-            if (train_step / 50) == 0:
+            if cluster and ((train_step / 50) == 0):
                 print(f'step {train_step} / {len(dataloaders["train"].dataset)}: loss {epoch_loss}')
             train_step += 1
 
