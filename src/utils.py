@@ -49,13 +49,14 @@ def getImageSetDirectories(data_dir):
 class collateFunction():
     """ Util class to create padded batches of data. """
 
-    def __init__(self, min_L=32):
+    def __init__(self, min_L=32, train_batch=True):
         """
         Args:
             min_L: int, pad length
         """
         
         self.min_L = min_L
+        self.train_batch = train_batch
 
     def __call__(self, batch):
         return self.collateFunction(batch)
@@ -79,8 +80,6 @@ class collateFunction():
         hm_batch = []  # batch of high-resolution status maps
         isn_batch = []  # batch of site names
 
-        train_batch = True
-
         for imageset in batch:
 
             lrs = imageset['lr']
@@ -95,20 +94,20 @@ class collateFunction():
                 alpha_batch.append(torch.cat([torch.ones(L), torch.zeros(self.min_L - L)], dim=0))
 
             hr = imageset['hr']
-            if train_batch and hr is not None:
+            if self.train_batch and hr is not None:
                 hr_batch.append(hr)
-            else:
-                train_batch = False
-
-            hm_batch.append(imageset['hr_map'])
+                hm_batch.append(imageset['hr_map'])
+            
             isn_batch.append(imageset['name'])
 
         padded_lr_batch = torch.stack(lr_batch, dim=0)
         alpha_batch = torch.stack(alpha_batch, dim=0)
 
-        if train_batch:
+        if self.train_batch:
             hr_batch = torch.stack(hr_batch, dim=0)
             hm_batch = torch.stack(hm_batch, dim=0)
+        else:
+            hr_batch, hm_batch = None, None
 
         return padded_lr_batch, alpha_batch, hr_batch, hm_batch, isn_batch
 
