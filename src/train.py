@@ -171,6 +171,7 @@ def trainAndGetBestModel(fusion_model, regis_model, optimizer, dataloaders, base
         fusion_model.train()
         regis_model.train()
         train_loss = 0.0  # monitor train loss
+        train_step = 0
 
         # Iterate over data.
         for lrs, alphas, hrs, hr_maps, names in iterate(dataloaders['train'], cluster=cluster):
@@ -202,6 +203,9 @@ def trainAndGetBestModel(fusion_model, regis_model, optimizer, dataloaders, base
             optimizer.step()
             epoch_loss = loss.detach().cpu().numpy() * len(hrs) / len(dataloaders['train'].dataset)
             train_loss += epoch_loss
+            if (train_step / 50) == 0:
+                print(f'step {train_step} / {len(dataloaders["train"].dataset)}: loss {epoch_loss}')
+            train_step += 1
 
         # Eval
         fusion_model.eval()

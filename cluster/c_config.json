@@ -7,7 +7,7 @@
 
   "misc": {
     "tag": "random_run",
-    "cluster": false
+    "cluster": true
   }
   ,
 
