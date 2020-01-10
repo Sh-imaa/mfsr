@@ -21,6 +21,7 @@ from DeepNetworks.ShiftNet import ShiftNet
 from DataLoader import ImagesetDataset
 from Evaluator import shift_cPSNR
 from utils import getImageSetDirectories, readBaselineCPSNR, collateFunction
+from cluster_utils import env_to_path
 from tensorboardX import SummaryWriter
 
 
@@ -131,9 +132,11 @@ def trainAndGetBestModel(fusion_model, regis_model, optimizer, dataloaders, base
         batch_size, n_views, min_L, beta, f"{datetime.datetime.now():%Y-%m-%d-%H-%M-%S-%f}")
 
     checkpoint_dir_run = os.path.join(config["paths"]["checkpoint_dir"], subfolder_pattern)
+    checkpoint_dir_run = env_to_path(checkpoint_dir_run)
     os.makedirs(checkpoint_dir_run, exist_ok=True)
 
     tb_logging_dir = config['paths']['tb_log_file_dir']
+    tb_logging_dir = env_to_path(tb_logging_dir)
     logging_dir = os.path.join(tb_logging_dir, subfolder_pattern)
     os.makedirs(logging_dir, exist_ok=True)
 
@@ -253,7 +256,7 @@ def main(config):
 
     optimizer = optim.Adam(list(fusion_model.parameters()) + list(regis_model.parameters()), lr=config["training"]["lr"])  # optim
     # ESA dataset
-    data_directory = config["paths"]["prefix"]
+    data_directory = env_to_path(config["paths"]["prefix"])
 
     baseline_cpsnrs = None
     if os.path.exists(os.path.join(data_directory, "norm.csv")):
