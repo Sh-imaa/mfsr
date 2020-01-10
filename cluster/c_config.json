@@ -1,14 +1,14 @@
 {
   "paths": {
-    "prefix": "../data/probav_data/",
-    "checkpoint_dir": "models/weights",
-    "tb_log_file_dir": "tb_logs/",
+    "prefix": "$SLURM_TMPDIR/probav_data/",
+    "checkpoint_dir": "$SCRATCH/mfsr/models/weights",
+    "tb_log_file_dir": "$SCRATCH/mfsr/tb_logs/",
     "tag": "random_run"
   },
 
   "network": {
     "encoder": {
-      "dropout": 0.5,
+      "dropout": 0,
       "in_channels": 2,
       "num_layers" : 2,
       "kernel_size": 3,
@@ -22,7 +22,7 @@
       "kernel_size": 3
     },
     "decoder": {
-      "dropout": 0.5,
+      "dropout": 0,
       "deconv": {
         "in_channels": 64,
         "kernel_size": 3,
@@ -38,12 +38,12 @@
   },
     
   "training": {
-    "num_epochs": 1,
-    "batch_size": 2,
-    "data_limit": 10,
+    "num_epochs": 400,
+    "batch_size": 32,
+    "data_limit": -1,
 
-    "min_L": 2,
-    "n_views": 2,
+    "min_L": 32,
+    "n_views": 32,
     "n_workers": 4,
     "crop": 3,
 
