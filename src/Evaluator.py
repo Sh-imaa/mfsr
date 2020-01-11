@@ -5,7 +5,7 @@ import itertools
 import numpy as np
 from tqdm import tqdm
 
-from DataLoader import get_patch
+from src.DataLoader import get_patch
 
 
 def cPSNR(sr, hr, hr_map):

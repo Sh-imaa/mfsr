@@ -15,13 +15,13 @@ from torch.utils.data import DataLoader
 from torch.utils.data.sampler import SubsetRandomSampler
 from torch.optim import lr_scheduler
 
-from DeepNetworks.HRNet import HRNet
-from DeepNetworks.ShiftNet import ShiftNet
+from src.DeepNetworks.HRNet import HRNet
+from src.DeepNetworks.ShiftNet import ShiftNet
 
-from DataLoader import ImagesetDataset
-from Evaluator import shift_cPSNR
-from utils import getImageSetDirectories, readBaselineCPSNR, collateFunction
-from cluster_utils import env_to_path
+from src.DataLoader import ImagesetDataset
+from src.Evaluator import shift_cPSNR
+from src.utils import getImageSetDirectories, readBaselineCPSNR, collateFunction
+from src.cluster_utils import env_to_path
 from tensorboardX import SummaryWriter
 
 
@@ -203,7 +203,7 @@ def trainAndGetBestModel(fusion_model, regis_model, optimizer, dataloaders, base
             optimizer.step()
             epoch_loss = loss.detach().cpu().numpy() * len(hrs) / len(dataloaders['train'].dataset)
             train_loss += epoch_loss
-            if cluster and ((train_step / 50) == 0):
+            if cluster and ((train_step % 50) == 0):
                 print(f'step {train_step} / {len(dataloaders["train"].dataset)}: loss {epoch_loss}')
             train_step += 1
 

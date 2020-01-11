@@ -3,7 +3,7 @@
 #SBATCH --cpus-per-task=6                # Ask for 6 CPUs
 #SBATCH --gres=gpu:1                     # Ask for 1 GPU
 #SBATCH --mem=32G                        # Ask for 32 GB of RAM
-#SBATCH --time=1:00:00                   # The job will run for 13 hours
+#SBATCH --time=10:00:00                   # The job will run for 13 hours
 #SBATCH -o /scratch/shimaa/logs/mfsr-%j.out  # Write the log in $SCRATCH
 #SBATCH -e /scratch/shimaa/logs/mfsr-%j.err  # Write the err in $SCRATCH
 
@@ -17,6 +17,7 @@ cp $SCRATCH/data/probav_data.zip $SLURM_TMPDIR
 unzip $SLURM_TMPDIR/probav_data.zip -d $SLURM_TMPDIR
 
 module load singularity/3.4
-cd $HOME/mfsr/src
-singularity exec --bind $SLURM_TMPDIR,$SCRATCH /scratch/shimaa/images/mfsr.sif python3 train.py --config ../cluster/c_config.json
+module load conda/9.2
+cd $HOME/mfsr
+singularity exec --nv --bind $SLURM_TMPDIR,$SCRATCH /scratch/shimaa/images/mfsr.sif python3 -m src.train --config cluster/c_config.json
 
