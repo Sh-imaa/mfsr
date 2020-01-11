@@ -3,5 +3,6 @@ __pycache__
 data/
 images/
 notebooks/
-*/tb_logs/
-*/models/
+tb_logs/
+models/
+

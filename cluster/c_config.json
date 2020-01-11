@@ -44,7 +44,7 @@
     
   "training": {
     "num_epochs": 400,
-    "batch_size": 32,
+    "batch_size": 16,
     "data_limit": -1,
 
     "min_L": 32,

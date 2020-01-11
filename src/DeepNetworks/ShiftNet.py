@@ -6,7 +6,7 @@
 
 import torch
 import torch.nn as nn
-import lanczos
+import src.lanczos as lanczos
 
 
 class ShiftNet(nn.Module):
