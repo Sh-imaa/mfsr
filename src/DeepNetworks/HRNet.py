@@ -127,12 +127,20 @@ class RecuversiveNet(nn.Module):
             x = self.fuse(alice_and_bob)
             x = x.view(batch_size, half_len, channels, width, heigth)  # new hidden states (B, L/2, C, W, H)
 
-            if self.alpha_residual: # skip connect padded views (alphas_bob = 0)
+            if self.alpha_residual == 'padding': # skip connect padded views (alphas_bob = 0)
                 alphas_alice = alphas[:, :half_len]
                 alphas_bob = alphas[:, half_len:nviews - parity]
                 alphas_bob = torch.flip(alphas_bob, [1])
                 x = alice + alphas_bob * x
                 alphas = alphas_alice
+
+            elif self.alpha_residual == 'weighted':
+                alphas_alice = alphas[:, :half_len]
+                alphas_bob = alphas[:, half_len:nviews - parity]
+                alphas_bob = torch.flip(alphas_bob, [1])
+                alphas_ = torch.cat([alphas_alice, alphas_bob], dim=1)
+                x = alice * alphas_alice + bob * alphas_bob + x * torch.min(alphas_, dim=1)[0]
+                alphas = torch.max(alphas_, dim=1)[0]
 
             nviews = half_len
             parity = nviews % 2

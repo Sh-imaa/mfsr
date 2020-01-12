@@ -161,7 +161,7 @@ def read_imageset(imset_dir, create_patches=False, patch_size=64, seed=None,
                         lr=np.array(lr_images),
                         hr=hr,
                         hr_map=hr_map,
-                        weights=weights,
+                        weights=(weights / weights.max()),
                         )
 
     return imageset

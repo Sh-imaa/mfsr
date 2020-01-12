@@ -156,6 +156,7 @@ def trainAndGetBestModel(fusion_model, regis_model, optimizer, dataloaders, base
     P = config["training"]["patch_size"]
     offset = (3 * config["training"]["patch_size"] - 128) // 2
     C = config["training"]["crop"]
+    weighted_order = config["training"]["weighted_order"]
     torch_mask = get_crop_mask(patch_size=P, crop_size=C)
     torch_mask = torch_mask.to(device)  # crop borders (loss)
 
@@ -174,15 +175,17 @@ def trainAndGetBestModel(fusion_model, regis_model, optimizer, dataloaders, base
         train_step = 0
 
         # Iterate over data.
-        for lrs, alphas, hrs, hr_maps, names in iterate(dataloaders['train'], cluster=cluster):
+        for lrs, alphas, weights, hrs, hr_maps, names in iterate(dataloaders['train'], cluster=cluster):
 
             optimizer.zero_grad()  # zero the parameter gradients
             lrs = lrs.float().to(device)
             alphas = alphas.float().to(device)
+            weights = weights.float().to(device)
             hr_maps = hr_maps.float().to(device)
             hrs = hrs.float().to(device)
 
-            # torch.autograd.set_detect_anomaly(mode=True)
+            if weighted_order:
+                alphas = weights
             srs = fusion_model(lrs, alphas)  # fuse multi frames (B, 1, 3*W, 3*H)
 
             # Register batch wrt HR
@@ -207,11 +210,15 @@ def trainAndGetBestModel(fusion_model, regis_model, optimizer, dataloaders, base
         fusion_model.eval()
         val_score = 0.0  # monitor val score
 
-        for lrs, alphas, hrs, hr_maps, names in dataloaders['val']:
+        for lrs, alphas, weights, hrs, hr_maps, names in dataloaders['val']:
             lrs = lrs.float().to(device)
             alphas = alphas.float().to(device)
+            weights = weights.float().to(device)
             hrs = hrs.numpy()
             hr_maps = hr_maps.numpy()
+
+            if weighted_order:
+                alphas = weights
 
             srs = fusion_model(lrs, alphas)[:, 0]  # fuse multi frames (B, 1, 3*W, 3*H)
 
