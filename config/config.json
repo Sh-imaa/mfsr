@@ -47,8 +47,8 @@
     "batch_size": 2,
     "data_limit": 10,
 
-    "min_L": 2,
-    "n_views": 2,
+    "min_L": 4,
+    "n_views": 4,
     "n_workers": 4,
     "crop": 3,
     "weighted_order": true,

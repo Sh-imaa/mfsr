@@ -138,9 +138,9 @@ class RecuversiveNet(nn.Module):
                 alphas_alice = alphas[:, :half_len]
                 alphas_bob = alphas[:, half_len:nviews - parity]
                 alphas_bob = torch.flip(alphas_bob, [1])
-                alphas_ = torch.cat([alphas_alice, alphas_bob], dim=1)
-                x = alice * alphas_alice + bob * alphas_bob + x * torch.min(alphas_, dim=1)[0]
-                alphas = torch.max(alphas_, dim=1)[0]
+                alphas_ = torch.stack([alphas_alice, alphas_bob])
+                x = alice * alphas_alice + bob * alphas_bob + x * torch.min(alphas_, dim=0)[0]
+                alphas = torch.max(alphas_, dim=0)[0]
 
             nviews = half_len
             parity = nviews % 2
