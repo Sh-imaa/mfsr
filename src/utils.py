@@ -79,18 +79,22 @@ class collateFunction():
         hr_batch = []  # batch of high-resolution views
         hm_batch = []  # batch of high-resolution status maps
         isn_batch = []  # batch of site names
+        weights_batch = []
 
         for imageset in batch:
 
             lrs = imageset['lr']
+            weights = torch.from_numpy(imageset['weights'])
             L, H, W = lrs.shape
 
             if L >= self.min_L:  # pad input to top_k
                 lr_batch.append(lrs[:self.min_L])
+                weights_batch.append(weights[:self.min_L])
                 alpha_batch.append(torch.ones(self.min_L))
             else:
                 pad = torch.zeros(self.min_L - L, H, W)
                 lr_batch.append(torch.cat([lrs, pad], dim=0))
+                weights_batch.append(torch.cat([weights, torch.zeros(self.min_L - L)], dim=0))
                 alpha_batch.append(torch.cat([torch.ones(L), torch.zeros(self.min_L - L)], dim=0))
 
             hr = imageset['hr']
@@ -102,6 +106,7 @@ class collateFunction():
 
         padded_lr_batch = torch.stack(lr_batch, dim=0)
         alpha_batch = torch.stack(alpha_batch, dim=0)
+        weights_batch = torch.stack(weights_batch, dim=0)
 
         if self.train_batch:
             hr_batch = torch.stack(hr_batch, dim=0)
@@ -109,7 +114,7 @@ class collateFunction():
         else:
             hr_batch, hm_batch = None, None
 
-        return padded_lr_batch, alpha_batch, hr_batch, hm_batch, isn_batch
+        return padded_lr_batch, alpha_batch, weights_batch, hr_batch, hm_batch, isn_batch
 
 
 def imsetshow(imageset, k=None, show_map=True, show_histogram=True, figsize=None, **kwargs):

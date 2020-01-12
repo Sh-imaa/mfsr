@@ -7,7 +7,7 @@
 
   "misc": {
     "tag": "random_run",
-    "cluster": false
+    "cluster": true
   }
 
   ,
@@ -21,7 +21,7 @@
     },
     "recursive": {
       "dropout": 0.5,
-      "alpha_residual": true,
+      "alpha_residual": "weighted",
       "in_channels": 64,
       "num_layers" : 2,
       "kernel_size": 3
@@ -51,6 +51,7 @@
     "n_views": 2,
     "n_workers": 4,
     "crop": 3,
+    "weighted_order": true,
 
 
     "lr": 0.0007,
