@@ -176,7 +176,7 @@ def trainAndGetBestModel(fusion_model, regis_model, optimizer, dataloaders, base
 
         # Iterate over data.
         for lrs, alphas, weights, hrs, hr_maps, names in iterate(dataloaders['train'], cluster=cluster):
-
+            
             optimizer.zero_grad()  # zero the parameter gradients
             lrs = lrs.float().to(device)
             alphas = alphas.float().to(device)

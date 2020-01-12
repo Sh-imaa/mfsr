@@ -155,6 +155,7 @@ def read_imageset(imset_dir, create_patches=False, patch_size=64, seed=None,
 
         if hr is not None:
             hr = get_patch(hr, x * 3, y * 3, patch_size * 3)
+    
 
     # Organise all assets into an ImageSet (OrderedDict)
     imageset = ImageSet(name=basename(imset_dir),
