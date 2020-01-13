@@ -7,8 +7,10 @@ import argparse
 import numpy as np
 from sklearn.model_selection import train_test_split
 from tqdm import tqdm
+import wandb
 
 import torch
+import torchvision
 import torch.optim as optim
 from torch import nn
 from torch.utils.data import DataLoader
@@ -22,8 +24,6 @@ from src.DataLoader import ImagesetDataset
 from src.Evaluator import shift_cPSNR
 from src.utils import getImageSetDirectories, readBaselineCPSNR, collateFunction
 from src.cluster_utils import env_to_path
-from tensorboardX import SummaryWriter
-
 
 def register_batch(shiftNet, lrs, reference):
     """
@@ -147,7 +147,6 @@ def trainAndGetBestModel(fusion_model, regis_model, optimizer, dataloaders, base
     logging_dir = os.path.join(tb_logging_dir, subfolder_pattern)
     os.makedirs(logging_dir, exist_ok=True)
 
-    writer = SummaryWriter(logging_dir)
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -162,6 +161,8 @@ def trainAndGetBestModel(fusion_model, regis_model, optimizer, dataloaders, base
 
     fusion_model.to(device)
     regis_model.to(device)
+
+    wandb.watch(fusion_model)
 
     scheduler = lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=config['training']['lr_decay'],
                                                verbose=True, patience=config['training']['lr_step'])
@@ -229,7 +230,7 @@ def trainAndGetBestModel(fusion_model, regis_model, optimizer, dataloaders, base
                 if baseline_cpsnrs is None:
                     val_score -= shift_cPSNR(np.clip(srs[i], 0, 1), hrs[i], hr_maps[i])
                 else:
-                    ESA = baseline_cpsnrs[names[i]]
+                    ESA = baseline_cpsnrs[names[i]] 
                     val_score += ESA / shift_cPSNR(np.clip(srs[i], 0, 1), hrs[i], hr_maps[i])
 
         val_score /= len(dataloaders['val'].dataset)
@@ -241,15 +242,14 @@ def trainAndGetBestModel(fusion_model, regis_model, optimizer, dataloaders, base
                        os.path.join(checkpoint_dir_run, 'ShiftNet.pth'))
             best_score = val_score
 
-        writer.add_image('SR Image', (srs[0] - np.min(srs[0])) / np.max(srs[0]), epoch, dataformats='HW')
-        error_map = hrs[0] - srs[0]
-        writer.add_image('Error Map', error_map, epoch, dataformats='HW')
-        writer.add_image('HR Image', hrs[0], epoch, dataformats='HW')
-        writer.add_scalar("train/loss", train_loss, epoch)
-        writer.add_scalar("train/val_loss", val_score, epoch)
+        hr, sr = torch.from_numpy(hrs[0]), torch.from_numpy(srs[0])
+        hr_sr = torch.stack([hr, sr]).unsqueeze(1)
+        lrs_wandb = lrs[0].unsqueeze(1)
+        wandb.log({f"val_hr_sr": wandb.Image(torchvision.utils.make_grid(hr_sr))}, step=epoch)
+        wandb.log({f"val_lr": wandb.Image(torchvision.utils.make_grid(lrs_wandb))}, step=epoch)
+        wandb.log({"loss/train": train_loss, "score/dev": val_score}, step=epoch)
         print(f'epoch {epoch}/ {num_epochs} -> training loss: {train_loss}, val loss: {val_score}')
         scheduler.step(val_score)
-    writer.close()
 
 
 def main(config):
@@ -264,6 +264,7 @@ def main(config):
     torch.manual_seed(0)
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
+    os.environ["WANDB_MODE"] = "dryrun"
 
     # Initialize the network based on the network configuration
     fusion_model = HRNet(config["network"])
@@ -272,6 +273,9 @@ def main(config):
     optimizer = optim.Adam(list(fusion_model.parameters()) + list(regis_model.parameters()), lr=config["training"]["lr"])  # optim
     # ESA dataset
     data_directory = env_to_path(config["paths"]["prefix"])
+    output_path = config["paths"]["checkpoint_dir"]
+    wandb.init(project="mfsr", dir=str(output_path))
+    wandb.config.update(config)
 
     baseline_cpsnrs = None
     if os.path.exists(os.path.join(data_directory, "norm.csv")):
