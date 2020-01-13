@@ -94,7 +94,7 @@ class collateFunction():
             else:
                 pad = torch.zeros(self.min_L - L, H, W)
                 lr_batch.append(torch.cat([lrs, pad], dim=0))
-                weights = weights.type(torch.FloatTensor)
+                weights = weights.type(torch.DoubleTensor)
                 weights_batch.append(torch.cat(
                     [weights, torch.zeros(self.min_L - L, dtype=torch.float64)], dim=0))
                 alpha_batch.append(
