@@ -30,7 +30,7 @@ def get_sr_and_score(imset, model, min_L=16):
     
     if imset.__class__ is ImageSet:
         collator = collateFunction(min_L=min_L)
-        lrs, alphas, hrs, hr_maps, names = collator([imset])
+        lrs, alphas, _, hrs, hr_maps, names = collator([imset])
     elif isinstance(imset, tuple):  # imset is a tuple of batches
         lrs, alphas, hrs, hr_maps, names = imset
 
@@ -63,9 +63,9 @@ def get_lr_encodings(imset, model, min_L=16):
     
     if imset.__class__ is ImageSet:
         collator = collateFunction(min_L=min_L, train_batch=False)
-        lrs, alphas, hrs, hr_maps, names = collator([imset])
+        lrs, alphas, weights, hrs, hr_maps, names = collator([imset])
     elif isinstance(imset, tuple):  # imset is a tuple of batches
-        lrs, alphas, hrs, hr_maps, names = imset
+        lrs, alphas, weights, hrs, hr_maps, names = imset
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     lrs = lrs.float().to(device)
