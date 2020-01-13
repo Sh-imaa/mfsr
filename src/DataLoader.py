@@ -116,7 +116,7 @@ def read_imageset(imset_dir, create_patches=False, patch_size=64, seed=None,
     elif lr_weights == "routing":
         if isfile(join(imset_dir, 'routing_weights.npy')):
             try:
-                weights = np.load(join(imset_dir, 'routing_weights.npy'))  # load clearance scores
+                weights = np.load(join(imset_dir, 'routing_weights.npy'))  # load routing scores
                 weights = weights.squeeze()
             except Exception as e:
                 print("please call routing.py before calling DataLoader")
@@ -191,8 +191,7 @@ class ImagesetDataset(Dataset):
         self.top_k = top_k
         self.beta = beta
         self.lr_weights = config["lr_weights"]
-        # np.random.seed(0)  # RNG seeds
-        # torch.manual_seed(0)
+        self.sorted_k = config["sorted_k"]
         
     def __len__(self):
         return len(self.imset_dir)        
@@ -215,7 +214,8 @@ class ImagesetDataset(Dataset):
                                seed=self.seed,
                                top_k=self.top_k,
                                beta=self.beta,
-                               lr_weights=self.lr_weights)
+                               lr_weights=self.lr_weights,
+                               sorted_k=self.sorted_k)
                     for dir_ in tqdm(imset_dir, disable=(len(imset_dir) < 11))]
 
         if len(imset) == 1:
