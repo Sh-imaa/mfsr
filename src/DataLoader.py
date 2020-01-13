@@ -70,7 +70,6 @@ def sample_clearest(weights, n=None, beta=50, seed=None):
     nans_num = np.isnan(p).sum()
     if nans_num > 0:
         p[np.isnan(p)] = 1 / nans_num
-    print(p)
     idx = range(len(p))
     i_sample = np.random.choice(idx, size=n, p=p, replace=False)
     return i_sample
@@ -142,7 +141,6 @@ def read_imageset(imset_dir, create_patches=False, patch_size=64, seed=None,
         weights = weights[i_clear_sorted]
         idx_names = idx_names[i_clear_sorted]
 
-    print(idx_names)
     lr_images = np.array([io.imread(join(imset_dir, f'LR{i}.png')) for i in idx_names], dtype=np.uint16)
 
     hr_map = np.array(io.imread(join(imset_dir, 'SM.png')), dtype=np.bool)

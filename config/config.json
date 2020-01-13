@@ -43,12 +43,12 @@
   },
     
   "training": {
-    "num_epochs": 1,
+    "num_epochs": 4,
     "batch_size": 2,
-    "data_limit": 2,
+    "data_limit": 4,
 
-    "min_L": 2,
-    "n_views": 2,
+    "min_L": 16,
+    "n_views": 16,
     "n_workers": 4,
     "crop": 3,
     "weighted_order": true,
