@@ -141,12 +141,8 @@ def trainAndGetBestModel(fusion_model, regis_model, optimizer, dataloaders, base
     checkpoint_dir_run = os.path.join(config["paths"]["checkpoint_dir"], subfolder_pattern)
     checkpoint_dir_run = env_to_path(checkpoint_dir_run)
     os.makedirs(checkpoint_dir_run, exist_ok=True)
-
-    tb_logging_dir = config['paths']['tb_log_file_dir']
-    tb_logging_dir = env_to_path(tb_logging_dir)
-    logging_dir = os.path.join(tb_logging_dir, subfolder_pattern)
-    os.makedirs(logging_dir, exist_ok=True)
-
+    wandb.init(project="mfsr", dir=str(checkpoint_dir_run))
+    wandb.config.update(config)
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -273,9 +269,6 @@ def main(config):
     optimizer = optim.Adam(list(fusion_model.parameters()) + list(regis_model.parameters()), lr=config["training"]["lr"])  # optim
     # ESA dataset
     data_directory = env_to_path(config["paths"]["prefix"])
-    output_path = config["paths"]["checkpoint_dir"]
-    wandb.init(project="mfsr", dir=str(output_path))
-    wandb.config.update(config)
 
     baseline_cpsnrs = None
     if os.path.exists(os.path.join(data_directory, "norm.csv")):

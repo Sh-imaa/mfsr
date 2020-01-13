@@ -1,8 +1,7 @@
 {
   "paths": {
     "prefix": "data/probav_data/",
-    "checkpoint_dir": "models/weights",
-    "tb_log_file_dir": "tb_logs/"
+    "checkpoint_dir": "models/weights"
   },
 
   "misc": {
@@ -43,7 +42,7 @@
   },
     
   "training": {
-    "num_epochs": 4,
+    "num_epochs": 1,
     "batch_size": 2,
     "data_limit": 4,
 
