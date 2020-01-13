@@ -84,7 +84,7 @@ class collateFunction():
         for imageset in batch:
 
             lrs = imageset['lr']
-            weights = torch.from_numpy(imageset['weights'])
+            weights = torch.from_numpy(imageset['weights'].astype(np.float32))
             L, H, W = lrs.shape
 
             if L >= self.min_L:  # pad input to top_k
@@ -94,9 +94,8 @@ class collateFunction():
             else:
                 pad = torch.zeros(self.min_L - L, H, W)
                 lr_batch.append(torch.cat([lrs, pad], dim=0))
-                weights = weights.type(torch.DoubleTensor)
                 weights_batch.append(torch.cat(
-                    [weights, torch.zeros(self.min_L - L, dtype=torch.float64)], dim=0))
+                    [weights, torch.zeros(self.min_L - L)], dim=0))
                 alpha_batch.append(
                     torch.cat([torch.ones(L), torch.zeros(self.min_L - L)], dim=0))
 
