@@ -1,7 +1,7 @@
 {
   "paths": {
     "prefix": "data/probav_data/",
-    "checkpoint_dir": "models/weights"
+    "checkpoint_dir": "models"
   },
 
   "misc": {
@@ -20,7 +20,7 @@
     },
     "recursive": {
       "dropout": 0.5,
-      "alpha_residual": "weighted",
+      "alpha_residual": "padded",
       "in_channels": 64,
       "num_layers" : 2,
       "kernel_size": 3
@@ -50,7 +50,7 @@
     "n_views": 16,
     "n_workers": 4,
     "crop": 3,
-    "weighted_order": true,
+    "weighted_order": false,
 
 
     "lr": 0.0007,
@@ -60,6 +60,7 @@
     "load_lr_maps": false,
     "beta": 50.0,
     "lr_weights": "clearance",
+    "sorted_k": true,
 
     "create_patches": true,
     "patch_size": 64,
