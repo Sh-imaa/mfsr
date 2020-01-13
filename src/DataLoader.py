@@ -62,7 +62,6 @@ def sample_clearest(weights, n=None, beta=50, seed=None):
     
     if seed is not None:
         np.random.seed(seed)
-    weights = weights.squeeze()
         
     e_c = np.exp(beta * weights / weights.max()) ##### FIXME: This is numerically unstable. 
     p = []
@@ -71,12 +70,13 @@ def sample_clearest(weights, n=None, beta=50, seed=None):
     nans_num = np.isnan(p).sum()
     if nans_num > 0:
         p[np.isnan(p)] = 1 / nans_num
+    print(p)
     idx = range(len(p))
     i_sample = np.random.choice(idx, size=n, p=p, replace=False)
     return i_sample
 
 def read_imageset(imset_dir, create_patches=False, patch_size=64, seed=None,
-                  top_k=None, beta=0., lr_weights="random"):
+                  top_k=None, beta=0., lr_weights="random", sorted_k=False):
     """
     Retrieves all assets from the given directory.
     Args:
@@ -118,22 +118,31 @@ def read_imageset(imset_dir, create_patches=False, patch_size=64, seed=None,
         if isfile(join(imset_dir, 'routing_weights.npy')):
             try:
                 weights = np.load(join(imset_dir, 'routing_weights.npy'))  # load clearance scores
+                weights = weights.squeeze()
             except Exception as e:
                 print("please call routing.py before calling DataLoader")
                 print(e)
         else:
             raise Exception("please call routing.py before calling DataLoader")
 
-    if top_k is not None and top_k > 0:
+    if sorted_k and (top_k is not None) and (top_k > 0):
+        top_k = min(top_k, len(idx_names))
+        i_clear_sorted = np.argsort(weights)[::-1][:top_k]  # max to min
+        weights = weights[i_clear_sorted]
+        idx_names = idx_names[i_clear_sorted]
+    
+    elif top_k is not None and top_k > 0:
         top_k = min(top_k, len(idx_names))
         i_samples = sample_clearest(weights, n=top_k, beta=beta, seed=seed)
         idx_names = idx_names[i_samples]
         weights = weights[i_samples]
+
     else:
         i_clear_sorted = np.argsort(weights)[::-1]  # max to min
         weights = weights[i_clear_sorted]
         idx_names = idx_names[i_clear_sorted]
 
+    print(idx_names)
     lr_images = np.array([io.imread(join(imset_dir, f'LR{i}.png')) for i in idx_names], dtype=np.uint16)
 
     hr_map = np.array(io.imread(join(imset_dir, 'SM.png')), dtype=np.bool)
@@ -155,7 +164,7 @@ def read_imageset(imset_dir, create_patches=False, patch_size=64, seed=None,
 
         if hr is not None:
             hr = get_patch(hr, x * 3, y * 3, patch_size * 3)
-    
+
 
     # Organise all assets into an ImageSet (OrderedDict)
     imageset = ImageSet(name=basename(imset_dir),
@@ -184,6 +193,8 @@ class ImagesetDataset(Dataset):
         self.top_k = top_k
         self.beta = beta
         self.lr_weights = config["lr_weights"]
+        # np.random.seed(0)  # RNG seeds
+        # torch.manual_seed(0)
         
     def __len__(self):
         return len(self.imset_dir)        

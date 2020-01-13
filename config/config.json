@@ -45,10 +45,10 @@
   "training": {
     "num_epochs": 1,
     "batch_size": 2,
-    "data_limit": 10,
+    "data_limit": 2,
 
-    "min_L": 4,
-    "n_views": 4,
+    "min_L": 2,
+    "n_views": 2,
     "n_workers": 4,
     "crop": 3,
     "weighted_order": true,
@@ -60,7 +60,7 @@
 
     "load_lr_maps": false,
     "beta": 50.0,
-    "lr_weights": "routing",
+    "lr_weights": "clearance",
 
     "create_patches": true,
     "patch_size": 64,
