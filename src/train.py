@@ -25,6 +25,8 @@ from src.Evaluator import shift_cPSNR
 from src.utils import getImageSetDirectories, readBaselineCPSNR, collateFunction
 from src.cluster_utils import env_to_path
 
+from src.predict import load_model
+
 def register_batch(shiftNet, lrs, reference):
     """
     Registers images against references.
@@ -237,6 +239,20 @@ def trainAndGetBestModel(fusion_model, regis_model, optimizer, dataloaders, base
             torch.save(regis_model.state_dict(),
                        os.path.join(checkpoint_dir_run, 'ShiftNet.pth'))
             best_score = val_score
+
+            loaded_model = load_model(config,
+                           os.path.join(checkpoint_dir_run, 'HRNet.pth'))
+            loaded_model.eval()
+            srs = fusion_model(lrs, alphas)[:, 0]  # fuse multi frames (B, 1, 3*W, 3*H)
+
+            # compute ESA score
+            srs = srs.detach().cpu().numpy()
+            if baseline_cpsnrs is None:
+                val_score -= shift_cPSNR(np.clip(srs[0], 0, 1), hrs[0], hr_maps[0])
+            else:
+                ESA = baseline_cpsnrs[names[i]] 
+                val_score += ESA / shift_cPSNR(np.clip(srs[0], 0, 1), hrs[0], hr_maps[0])
+            print('val_score', val_score)
 
         hr, sr = torch.from_numpy(hrs[0]), torch.from_numpy(srs[0])
         hr_sr = torch.stack([hr, sr]).unsqueeze(1)
