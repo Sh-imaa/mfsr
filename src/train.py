@@ -234,6 +234,7 @@ def trainAndGetBestModel(fusion_model, regis_model, optimizer, dataloaders, base
         val_score /= len(dataloaders['val'].dataset)
 
         if best_score > val_score:
+            print(f'best score {}, val score {val_score}')
             torch.save(fusion_model.state_dict(),
                        os.path.join(checkpoint_dir_run, 'HRNet.pth'))
             torch.save(regis_model.state_dict(),
@@ -243,16 +244,16 @@ def trainAndGetBestModel(fusion_model, regis_model, optimizer, dataloaders, base
             loaded_model = load_model(config,
                            os.path.join(checkpoint_dir_run, 'HRNet.pth'))
             loaded_model.eval()
-            srs = fusion_model(lrs, alphas)[:, 0]  # fuse multi frames (B, 1, 3*W, 3*H)
+            srs = loaded_model(lrs, alphas)[:, 0]  # fuse multi frames (B, 1, 3*W, 3*H)
 
             # compute ESA score
             srs = srs.detach().cpu().numpy()
             if baseline_cpsnrs is None:
-                val_score -= shift_cPSNR(np.clip(srs[0], 0, 1), hrs[0], hr_maps[0])
+                val_score_ = shift_cPSNR(np.clip(srs[0], 0, 1), hrs[0], hr_maps[0])
             else:
                 ESA = baseline_cpsnrs[names[i]] 
-                val_score += ESA / shift_cPSNR(np.clip(srs[0], 0, 1), hrs[0], hr_maps[0])
-            print('val_score', val_score)
+                val_score_ = ESA / shift_cPSNR(np.clip(srs[0], 0, 1), hrs[0], hr_maps[0])
+            print('val_score', val_score_)
 
         hr, sr = torch.from_numpy(hrs[0]), torch.from_numpy(srs[0])
         hr_sr = torch.stack([hr, sr]).unsqueeze(1)
