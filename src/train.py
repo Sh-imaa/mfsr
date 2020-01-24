@@ -234,7 +234,7 @@ def trainAndGetBestModel(fusion_model, regis_model, optimizer, dataloaders, base
         val_score /= len(dataloaders['val'].dataset)
 
         if best_score > val_score:
-            print(f'best score {}, val score {val_score}')
+            print(f'best score {best_score}, val score {val_score}')
             torch.save(fusion_model.state_dict(),
                        os.path.join(checkpoint_dir_run, 'HRNet.pth'))
             torch.save(regis_model.state_dict(),
