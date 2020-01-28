@@ -230,6 +230,8 @@ def trainAndGetBestModel(fusion_model, regis_model, optimizer, dataloaders, base
                 else:
                     ESA = baseline_cpsnrs[names[i]] 
                     val_score += ESA / shift_cPSNR(np.clip(srs[i], 0, 1), hrs[i], hr_maps[i])
+
+        val_score /= len(dataloaders['val'].dataset)
         
         hr, sr = torch.from_numpy(hrs[0]), torch.from_numpy(srs[0])
         hr_sr = torch.stack([hr, sr]).unsqueeze(1)
