@@ -230,23 +230,42 @@ def trainAndGetBestModel(fusion_model, regis_model, optimizer, dataloaders, base
                 else:
                     ESA = baseline_cpsnrs[names[i]] 
                     val_score += ESA / shift_cPSNR(np.clip(srs[i], 0, 1), hrs[i], hr_maps[i])
-
-        val_score /= len(dataloaders['val'].dataset)
-
-        if best_score > val_score:
-            torch.save(fusion_model.state_dict(),
-                       os.path.join(checkpoint_dir_run, 'HRNet.pth'))
-            torch.save(regis_model.state_dict(),
-                       os.path.join(checkpoint_dir_run, 'ShiftNet.pth'))
-            best_score = val_score
-
+        
         hr, sr = torch.from_numpy(hrs[0]), torch.from_numpy(srs[0])
         hr_sr = torch.stack([hr, sr]).unsqueeze(1)
         lrs_wandb = lrs[0].unsqueeze(1)
         wandb.log({f"val_hr_sr": wandb.Image(torchvision.utils.make_grid(hr_sr))}, step=epoch)
         wandb.log({f"val_lr": wandb.Image(torchvision.utils.make_grid(lrs_wandb))}, step=epoch)
-        wandb.log({"loss/train": train_loss, "score/dev": val_score}, step=epoch)
-        print(f'epoch {epoch}/ {num_epochs} -> training loss: {train_loss}, val loss: {val_score}')
+
+        train_score = 0.0  # monitor train score
+        for lrs, alphas, weights, hrs, hr_maps, names in dataloaders['train']:
+            lrs = lrs.float().to(device)
+            alphas = alphas.float().to(device)
+            weights = weights.float().to(device)
+            hrs = hrs.numpy()
+            hr_maps = hr_maps.numpy()
+
+            if weighted_order:
+                alphas = weights
+
+            srs = fusion_model(lrs, alphas)[:, 0]  # fuse multi frames (B, 1, 3*W, 3*H)
+
+            # compute ESA score
+            srs = srs.detach().cpu().numpy()
+            for i in range(srs.shape[0]):  # batch size
+
+                if baseline_cpsnrs is None:
+                    train_score -= shift_cPSNR(np.clip(srs[i], 0, 1), hrs[i], hr_maps[i])
+                else:
+                    ESA = baseline_cpsnrs[names[i]] 
+                    train_score += ESA / shift_cPSNR(np.clip(srs[i], 0, 1), hrs[i], hr_maps[i])
+
+        train_score /= len(dataloaders['train'].dataset)
+
+        wandb.log({"loss/train": train_loss,
+                   "score/train": train_score,
+                   "score/dev": val_score}, step=epoch)
+        print(f'epoch {epoch}/ {num_epochs} -> training loss: {train_loss}, train score: {train_score}, val loss: {val_score}')
         scheduler.step(val_score)
 
 
