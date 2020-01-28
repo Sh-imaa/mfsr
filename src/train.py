@@ -265,7 +265,7 @@ def trainAndGetBestModel(fusion_model, regis_model, optimizer, dataloaders, base
         wandb.log({"loss/train": train_loss,
                    "score/train": train_score,
                    "score/dev": val_score}, step=epoch)
-        print(f'epoch {epoch}/ {num_epochs} -> training loss: {train_loss}, train score: {train_score}, val loss: {val_score}')
+        print(f'epoch {epoch}/ {num_epochs} -> training loss: {train_loss}, train score: {train_score}, val score: {val_score}')
         scheduler.step(val_score)
 
 
