@@ -16,7 +16,7 @@ from src.Evaluator import shift_cPSNR
 from src.utils import getImageSetDirectories, readBaselineCPSNR, collateFunction
 
 
-def get_sr_and_score(imset, model, min_L=16):
+def get_sr_and_score(imset, model, min_L=16, baseline_path=None):
     '''
     Super resolves an imset with a given model.
     Args:
@@ -48,7 +48,17 @@ def get_sr_and_score(imset, model, min_L=16):
     else:
         scPSNR = None
 
-    return sr, scPSNR
+    baseline_cpsnrs = None
+    if os.path.exists(baseline_path):
+        baseline_cpsnrs = readBaselineCPSNR(baseline_path)
+
+    if (baseline_cpsnrs is not None) and (scPSNR is not None) :
+        ESA = baseline_cpsnrs[names[0]]
+        relative_score = ESA / scPSNR
+    else:
+        relative_score = None
+
+    return sr, scPSNR, relative_score
 
 def get_lr_encodings(imset, model, min_L=16):
     '''
