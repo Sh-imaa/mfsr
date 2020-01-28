@@ -124,6 +124,18 @@ def read_imageset(imset_dir, create_patches=False, patch_size=64, seed=None,
         else:
             raise Exception("please call routing.py before calling DataLoader")
 
+    elif lr_weights == "smooth_routing":
+        if isfile(join(imset_dir, 'routing_weights.npy')):
+            try:
+                weights = np.load(join(imset_dir, 'routing_weights.npy'))  # load routing scores
+                weights = weights.squeeze()
+                weights = smooth_weights(weights)
+            except Exception as e:
+                print("please call routing.py before calling DataLoader")
+                print(e)
+        else:
+            raise Exception("please call routing.py before calling DataLoader")
+
     if sorted_k and (top_k is not None) and (top_k > 0):
         top_k = min(top_k, len(idx_names))
         i_clear_sorted = np.argsort(weights)[::-1][:top_k]  # max to min

@@ -42,7 +42,7 @@
   },
     
   "training": {
-    "num_epochs": 10,
+    "num_epochs": 1,
     "batch_size": 2,
     "data_limit": 4,
 
@@ -59,8 +59,8 @@
 
     "load_lr_maps": false,
     "beta": 50.0,
-    "lr_weights": "clearance",
-    "sorted_k": true,
+    "lr_weights": "soft_routing",
+    "sorted_k": false,
 
     "create_patches": true,
     "patch_size": 64,

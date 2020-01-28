@@ -1,5 +1,9 @@
 import numpy as np
 
+import torch
+import torch.nn as nn
+import torchvision.transforms as T
+
 def get_routing_clusters(c, limit=1e1):
     # get clusters
     c = np.array([x.item() for x in c])
@@ -20,8 +24,32 @@ def get_routing_clusters(c, limit=1e1):
     return [], sorted_i, np.ones_like(sorted_i)
 
 
-def smooth_weights(c, limit=1e1, alpha=0.5):
-    bad_images, good_images, _ = get_routing_clusters(c, limit=limit)
-    c = np.array([x.item() for x in c])
-    good_weights = c[good_images] 
-    slope =
+def route(images, it=500):
+    """
+    Args:
+        images: list of nxm tensors
+        it: number of iterations of the routing
+
+    Returns:
+    list of weights for every input tensor
+    """
+    
+    images_flatten = [image.flatten() for image in images]
+    images_t = torch.stack(images_flatten)
+    images_t = torch.nn.functional.normalize(images_t, dim=1)
+
+    n = len(images)
+    b = torch.tensor([1. for _ in range(n)])
+    c = nn.Softmax()(b).view(-1, 1)
+
+    for _ in range(it):
+        s = torch.mul(c, images_t).sum(dim=0)
+        s = torch.nn.functional.normalize(s, dim=0).view(-1, 1)
+        b = b + torch.stack([torch.mm(images_t[i].view(1, -1), s) for i in range(n)]).squeeze()
+        c = nn.Softmax()(b).view(-1, 1)
+    return c.squeeze()
+
+def smooth_weights(c, alpha=0.5):
+    smooth_c = np.minimum(c.max(), c + c.max() - np.quantile(c, alpha))
+    
+    return smooth_c

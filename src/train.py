@@ -24,6 +24,7 @@ from src.DataLoader import ImagesetDataset
 from src.Evaluator import shift_cPSNR
 from src.utils import getImageSetDirectories, readBaselineCPSNR, collateFunction
 from src.cluster_utils import env_to_path
+from src.dynamic_routing_utils import smooth_weights
 
 from src.predict import load_model
 
@@ -143,6 +144,7 @@ def trainAndGetBestModel(fusion_model, regis_model, optimizer, dataloaders, base
     checkpoint_dir_run = os.path.join(config["paths"]["checkpoint_dir"], subfolder_pattern)
     checkpoint_dir_run = env_to_path(checkpoint_dir_run)
     os.makedirs(checkpoint_dir_run, exist_ok=True)
+    print(checkpoint_dir_run)
     wandb.init(project="mfsr", dir=str(checkpoint_dir_run))
     wandb.config.update(config)
 
