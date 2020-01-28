@@ -12,6 +12,8 @@ import torch
 from torch.utils.data import Dataset
 from tqdm import tqdm
 
+from src.dynamic_routing_utils import smooth_weights
+
 
 def get_patch(img, x, y, size=32):
     """

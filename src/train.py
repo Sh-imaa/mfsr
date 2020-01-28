@@ -24,7 +24,7 @@ from src.DataLoader import ImagesetDataset
 from src.Evaluator import shift_cPSNR
 from src.utils import getImageSetDirectories, readBaselineCPSNR, collateFunction
 from src.cluster_utils import env_to_path
-from src.dynamic_routing_utils import smooth_weights
+
 
 from src.predict import load_model
 
