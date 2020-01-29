@@ -12,7 +12,7 @@ import torch
 from torch.utils.data import Dataset
 from tqdm import tqdm
 
-from src.dynamic_routing_utils import smooth_weights
+from src.dynamic_routing_utils import smooth_weights, get_routing_clusters
 
 
 def get_patch(img, x, y, size=32):
@@ -77,7 +77,8 @@ def sample_clearest(weights, n=None, beta=50, seed=None):
     return i_sample
 
 def read_imageset(imset_dir, create_patches=False, patch_size=64, seed=None,
-                  top_k=None, beta=0., lr_weights="random", sorted_k=False):
+                  top_k=None, beta=0., lr_weights="random", outlier="keep",
+                  sorted_k=False):
     """
     Retrieves all assets from the given directory.
     Args:
@@ -155,6 +156,34 @@ def read_imageset(imset_dir, create_patches=False, patch_size=64, seed=None,
         weights = weights[i_clear_sorted]
         idx_names = idx_names[i_clear_sorted]
 
+    if outlier == "remove":
+        if isfile(join(imset_dir, 'routing_weights.npy')):
+            try:
+                weights = np.load(join(imset_dir, 'routing_weights.npy'))  # load routing scores
+                weights = weights.squeeze()
+                _, good_indeces, _ = get_routing_clusters(weights)
+                good_indeces = ['{0:03}'.format(i) for i in good_indeces]
+                idx_names = [i for i in idx_names if i in good_indeces]
+
+            except Exception as e:
+                print("please call routing.py before calling DataLoader")
+                print(e)
+
+    if outlier == "replace":
+        if isfile(join(imset_dir, 'routing_weights.npy')):
+            try:
+                weights = np.load(join(imset_dir, 'routing_weights.npy'))  # load routing scores
+                weights = weights.squeeze()
+                bad_indeces, good_indeces, _ = get_routing_clusters(weights)
+                good_indeces = ['{0:03}'.format(i) for i in good_indeces]
+                idx_names = [i for i in idx_names if i in good_indeces]
+                idx_names += idx_names[: bad_indeces.shape[0]]
+
+            except Exception as e:
+                print("please call routing.py before calling DataLoader")
+                print(e)
+
+
     lr_images = np.array([io.imread(join(imset_dir, f'LR{i}.png')) for i in idx_names], dtype=np.uint16)
 
     hr_map = np.array(io.imread(join(imset_dir, 'SM.png')), dtype=np.bool)
@@ -204,6 +233,7 @@ class ImagesetDataset(Dataset):
         self.seed = seed  # seed for random patches
         self.top_k = top_k
         self.beta = beta
+        self.outlier = config["outlier"]
         self.lr_weights = config["lr_weights"]
         self.sorted_k = config["sorted_k"]
         
@@ -228,6 +258,7 @@ class ImagesetDataset(Dataset):
                                seed=self.seed,
                                top_k=self.top_k,
                                beta=self.beta,
+                               outlier=self.outlier,
                                lr_weights=self.lr_weights,
                                sorted_k=self.sorted_k)
                     for dir_ in tqdm(imset_dir, disable=(len(imset_dir) < 11))]

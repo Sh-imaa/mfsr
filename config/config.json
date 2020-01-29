@@ -61,6 +61,7 @@
     "beta": 50.0,
     "lr_weights": "soft_routing",
     "sorted_k": false,
+    "outlier": "keep",
 
     "create_patches": true,
     "patch_size": 64,
