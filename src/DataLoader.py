@@ -162,9 +162,9 @@ def read_imageset(imset_dir, create_patches=False, patch_size=64, seed=None,
                 weights_ = np.load(join(imset_dir, 'routing_weights.npy'))  # load routing scores
                 weights_ = weights_.squeeze()
                 _, good_indeces, _ = get_routing_clusters(weights_)
-                weights = weights[:len(good_indeces)]
                 good_indeces = ['{0:03}'.format(i) for i in good_indeces]
                 idx_names = [i for i in idx_names if i in good_indeces]
+                weights = weights[:len(idx_names)]
 
             except Exception as e:
                 print("please call routing.py before calling DataLoader")
@@ -175,11 +175,12 @@ def read_imageset(imset_dir, create_patches=False, patch_size=64, seed=None,
             try:
                 weights_ = np.load(join(imset_dir, 'routing_weights.npy'))  # load routing scores
                 weights_ = weights_.squeeze()
-                bad_indeces, good_indeces, _ = get_routing_clusters(weights_)
-                weights = np.concatenate((weights[:len(good_indeces)], weights[:len(bad_indeces)])) 
+                _, good_indeces, _ = get_routing_clusters(weights_)
+                n = max(0, (len(idx_names) - len(good_indeces)))
                 good_indeces = ['{0:03}'.format(i) for i in good_indeces]
                 idx_names = [i for i in idx_names if i in good_indeces]
-                idx_names += idx_names[: len(bad_indeces)]
+                weights = np.concatenate((weights[:len(idx_names)], weights[:n])) 
+                idx_names += idx_names[: n]
 
             except Exception as e:
                 print("please call routing.py before calling DataLoader")
