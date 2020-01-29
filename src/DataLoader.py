@@ -170,7 +170,7 @@ def read_imageset(imset_dir, create_patches=False, patch_size=64, seed=None,
                 print("please call routing.py before calling DataLoader")
                 print(e)
 
-    if outlier == "replace":
+    elif outlier == "replace":
         if isfile(join(imset_dir, 'routing_weights.npy')):
             try:
                 weights_ = np.load(join(imset_dir, 'routing_weights.npy'))  # load routing scores
