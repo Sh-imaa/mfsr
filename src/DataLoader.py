@@ -178,9 +178,14 @@ def read_imageset(imset_dir, create_patches=False, patch_size=64, seed=None,
                 _, good_indeces, _ = get_routing_clusters(weights_)
                 n = max(0, (len(idx_names) - len(good_indeces)))
                 good_indeces = ['{0:03}'.format(i) for i in good_indeces]
+                all_frames = len(idx_names)
                 idx_names = [i for i in idx_names if i in good_indeces]
-                weights = np.concatenate((weights[:len(idx_names)], weights[:n])) 
-                idx_names += idx_names[: n]
+                weights = weights[:len(idx_names)]
+                original_w = weights[:]
+                original_ind = idx_names[:]
+                while len(idx_names) < all_frames:
+                    weights = np.concatenate((weights, original_w[:n]))
+                    idx_names += original_ind[:n]
 
             except Exception as e:
                 print("please call routing.py before calling DataLoader")
