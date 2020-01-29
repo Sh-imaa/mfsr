@@ -23,5 +23,5 @@ export PATH="$REVERSED_PATH"
 module load singularity/3.5
 module load cuda/9.2
 cd $HOME/mfsr
-singularity exec --nv --bind $SLURM_TMPDIR,$SCRATCH /scratch/shimaa/images/mfsr.sif python3 -m src.train --config cluster/c_config.json
+singularity exec --nv --bind $SLURM_TMPDIR,$SCRATCH /scratch/shimaa/images/mfsr_0_1.sif python3 -m src.train --config cluster/c_config.json
 
