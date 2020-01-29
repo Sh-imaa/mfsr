@@ -16,7 +16,8 @@ From: ubuntu:18.04
     apt -y install nano vim
     apt-get install -y libsm6 libxext6 libxrender-dev
 
-    pip3 install numpy==1.14.* sklearn scikit-image
+    export LC_ALL=C.UTF-8
+    pip3 install numpy sklearn scikit-image
     pip3 install opencv-python
     pip3 install graphql-core==2.0 wandb Pillow==5.4 pyyaml seaborn
     pip3 install --no-cache-dir torch torchvision matplotlib ipython tqdm tensorboardX
