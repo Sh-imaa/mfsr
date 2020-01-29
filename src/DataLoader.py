@@ -159,9 +159,10 @@ def read_imageset(imset_dir, create_patches=False, patch_size=64, seed=None,
     if outlier == "remove":
         if isfile(join(imset_dir, 'routing_weights.npy')):
             try:
-                weights = np.load(join(imset_dir, 'routing_weights.npy'))  # load routing scores
-                weights = weights.squeeze()
-                _, good_indeces, _ = get_routing_clusters(weights)
+                weights_ = np.load(join(imset_dir, 'routing_weights.npy'))  # load routing scores
+                weights_ = weights_.squeeze()
+                _, good_indeces, _ = get_routing_clusters(weights_)
+                weights = weights[:len(good_indeces)]
                 good_indeces = ['{0:03}'.format(i) for i in good_indeces]
                 idx_names = [i for i in idx_names if i in good_indeces]
 
@@ -172,12 +173,13 @@ def read_imageset(imset_dir, create_patches=False, patch_size=64, seed=None,
     if outlier == "replace":
         if isfile(join(imset_dir, 'routing_weights.npy')):
             try:
-                weights = np.load(join(imset_dir, 'routing_weights.npy'))  # load routing scores
-                weights = weights.squeeze()
-                bad_indeces, good_indeces, _ = get_routing_clusters(weights)
+                weights_ = np.load(join(imset_dir, 'routing_weights.npy'))  # load routing scores
+                weights_ = weights_.squeeze()
+                bad_indeces, good_indeces, _ = get_routing_clusters(weights_)
+                weights = np.concatenate((weights[:len(good_indeces)], weights[:len(bad_indeces)])) 
                 good_indeces = ['{0:03}'.format(i) for i in good_indeces]
                 idx_names = [i for i in idx_names if i in good_indeces]
-                idx_names += idx_names[: bad_indeces.shape[0]]
+                idx_names += idx_names[: len(bad_indeces)]
 
             except Exception as e:
                 print("please call routing.py before calling DataLoader")
@@ -185,7 +187,6 @@ def read_imageset(imset_dir, create_patches=False, patch_size=64, seed=None,
 
 
     lr_images = np.array([io.imread(join(imset_dir, f'LR{i}.png')) for i in idx_names], dtype=np.uint16)
-
     hr_map = np.array(io.imread(join(imset_dir, 'SM.png')), dtype=np.bool)
     if exists(join(imset_dir, 'HR.png')):
         hr = np.array(io.imread(join(imset_dir, 'HR.png')), dtype=np.uint16)

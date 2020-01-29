@@ -144,9 +144,10 @@ def trainAndGetBestModel(fusion_model, regis_model, optimizer, dataloaders, base
     checkpoint_dir_run = os.path.join(config["paths"]["checkpoint_dir"], subfolder_pattern)
     checkpoint_dir_run = env_to_path(checkpoint_dir_run)
     os.makedirs(checkpoint_dir_run, exist_ok=True)
-    print(checkpoint_dir_run)
     wandb.init(project="mfsr", dir=str(checkpoint_dir_run))
     wandb.config.update(config)
+    print(checkpoint_dir_run)
+
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 

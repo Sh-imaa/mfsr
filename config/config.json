@@ -59,9 +59,9 @@
 
     "load_lr_maps": false,
     "beta": 50.0,
-    "lr_weights": "soft_routing",
+    "lr_weights": "smooth_routing",
     "sorted_k": false,
-    "outlier": "keep",
+    "outlier": "replace",
 
     "create_patches": true,
     "patch_size": 64,
