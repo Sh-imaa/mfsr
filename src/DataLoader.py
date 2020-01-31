@@ -151,10 +151,11 @@ def read_imageset(imset_dir, create_patches=False, patch_size=64, seed=None,
         idx_names = idx_names[i_samples]
         weights = weights[i_samples]
 
-    else:
+    elif sorted_k:
         i_clear_sorted = np.argsort(weights)[::-1]  # max to min
         weights = weights[i_clear_sorted]
         idx_names = idx_names[i_clear_sorted]
+
 
     if outlier == "remove":
         if isfile(join(imset_dir, 'routing_weights.npy')):

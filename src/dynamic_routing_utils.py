@@ -3,6 +3,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torchvision.transforms as T
+from skimage.util.shape import view_as_windows
 
 def get_routing_clusters(c, limit=1e1):
     # get clusters
@@ -48,6 +49,48 @@ def route(images, it=500):
         b = b + torch.stack([torch.mm(images_t[i].view(1, -1), s) for i in range(n)]).squeeze()
         c = nn.Softmax()(b).view(-1, 1)
     return c.squeeze()
+
+def dist(v1, v2, dim=0):
+    "Get Euclidean distance"
+    return torch.pow(v1 - v2, 2).sum(dim=dim)
+
+def route_per_pixel(images, it=100):
+    n, ch, w, h = images.shape
+    b = torch.ones(n, w, h)
+    c = nn.Softmax(dim=0)(b)
+    for _ in range(it):
+        c_ = c.unsqueeze(1).repeat((1, ch, 1, 1))
+        # a weighted image
+        s = torch.mul(c_, images).sum(dim=0)
+        b_ = torch.stack([-dist(images[i], s) for i in range(n)])
+        b += b_.squeeze()
+        c = nn.Softmax(dim=0)(b)
+    return c
+
+
+def route_conv(images_t, f=20, k=3, it=100, step=1):
+    padding = int(k // 2)
+    images_t = images_t[:, :f, :, :]
+    n, ch, w, h = images_t.shape
+    images_t = view_as_windows(images_t , (n, ch, k, k), step=step)
+    images_t = torch.from_numpy(np.moveaxis(images_t, 4, 2))
+    _, _, _, w_, h_, _, _, _ = images_t.shape
+    images_t = images_t.reshape(n, w_, h_, -1) 
+    images_t = torch.nn.functional.normalize(images_t, dim=-1)
+    b = torch.ones(n, w_, h_)
+    c = nn.Softmax(dim=0)(b)
+    for _ in range(it):
+        c_ = c.unsqueeze(3).repeat((1, 1, 1, ch * k * k))
+        # a weighted image
+        s = torch.mul(c_, images_t).mean(dim=0)
+        s = torch.nn.functional.normalize(s, dim=-1)
+        s = s.unsqueeze(3)
+        b_ = torch.stack([torch.matmul(images_t[i].unsqueeze(2), s) for i in range(n)])
+        b += b_.squeeze()
+        c = nn.Softmax(dim=0)(b)
+    cs_padded = np.pad(c, pad_width=((0, 0), (padding, padding), (padding, padding)), mode='edge')
+    return c, cs_padded
+
 
 def smooth_weights(c, alpha=0.5):
     smooth_c = np.minimum(c.max(), c + c.max() - np.quantile(c, alpha))
