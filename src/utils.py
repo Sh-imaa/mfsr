@@ -1,10 +1,12 @@
 """ Python utilities """
 
 import csv
-import numpy as np
 import os
+from addict import Dict
+import yaml
 import warnings
 
+import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import seaborn as sns
@@ -194,3 +196,14 @@ def imsetshow(imageset, k=None, show_map=True, show_histogram=True, figsize=None
                       loc='upper right')
 
     fig.tight_layout()
+
+def strip_conf(conf_path):
+    """Transform a dictionary where the value of interest is hold in value
+    key into direct refrence"""
+    
+    with open(conf_path, "r") as stream: 
+        conf = Dict(yaml.safe_load(stream))
+    for key, data in conf.items():
+        if (isinstance(conf[key], Dict)) and ('value' in conf[key]):
+            conf[key] = conf[key]['value']
+    return conf
