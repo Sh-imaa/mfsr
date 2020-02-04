@@ -78,7 +78,7 @@ def sample_clearest(weights, n=None, beta=50, seed=None):
 
 def read_imageset(imset_dir, create_patches=False, patch_size=64, seed=None,
                   top_k=None, beta=0., lr_weights="random", outlier="keep",
-                  sorted_k=False):
+                  weight_maps_type='routing', sorted_k=False):
     """
     Retrieves all assets from the given directory.
     Args:
@@ -106,6 +106,17 @@ def read_imageset(imset_dir, create_patches=False, patch_size=64, seed=None,
     
     # default is random, where every LR gets equal weight (np.ones)
     weights = np.ones(len(idx_names))
+    weight_maps = None
+    if weight_maps_type == "routing":
+        if isfile(join(imset_dir, 'weight_maps.npy')):
+            try:
+                weight_maps = np.load(join(imset_dir, 'weight_maps.npy'))  # load clearance scores
+            except Exception as e:
+                print("please call route_pixels.py before calling DataLoader")
+                print(e)
+        else:
+            raise Exception("please call oute_pixels.py before calling DataLoader")
+
     if lr_weights == "clearance":
         if isfile(join(imset_dir, 'clearance.npy')):
             try:
@@ -200,6 +211,11 @@ def read_imageset(imset_dir, create_patches=False, patch_size=64, seed=None,
     else:
         hr = None  # no high-res image in test data
 
+    if weight_maps is None:
+        weight_maps = np.ones_like(lr_images)
+    else:
+        weight_maps /= weight_maps.max(axis=0)
+
     if create_patches:
         if seed is not None:
             np.random.seed(seed)
@@ -209,6 +225,7 @@ def read_imageset(imset_dir, create_patches=False, patch_size=64, seed=None,
         x = np.random.randint(low=0, high=max_x)
         y = np.random.randint(low=0, high=max_y)
         lr_images = get_patch(lr_images, x, y, patch_size)  # broadcasting slicing coordinates across all images
+        weight_maps = get_patch(weight_maps, x, y, patch_size)
         hr_map = get_patch(hr_map, x * 3, y * 3, patch_size * 3)
 
         if hr is not None:
@@ -221,6 +238,7 @@ def read_imageset(imset_dir, create_patches=False, patch_size=64, seed=None,
                         hr=hr,
                         hr_map=hr_map,
                         weights=(weights / weights.max()),
+                        weight_map=weight_maps,
                         )
 
     return imageset
@@ -244,6 +262,7 @@ class ImagesetDataset(Dataset):
         self.outlier = config["outlier"]
         self.lr_weights = config["lr_weights"]
         self.sorted_k = config["sorted_k"]
+        self.weight_maps_type = config["weight_maps_type"]
         
     def __len__(self):
         return len(self.imset_dir)        
@@ -268,7 +287,8 @@ class ImagesetDataset(Dataset):
                                beta=self.beta,
                                outlier=self.outlier,
                                lr_weights=self.lr_weights,
-                               sorted_k=self.sorted_k)
+                               sorted_k=self.sorted_k,
+                               weight_maps_type=self.weight_maps_type)
                     for dir_ in tqdm(imset_dir, disable=(len(imset_dir) < 11))]
 
         if len(imset) == 1:

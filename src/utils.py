@@ -82,16 +82,19 @@ class collateFunction():
         hm_batch = []  # batch of high-resolution status maps
         isn_batch = []  # batch of site names
         weights_batch = []
+        weight_maps_b = []
 
         for imageset in batch:
 
             lrs = imageset['lr']
             weights = torch.from_numpy(imageset['weights'].astype(np.float32))
+            weight_maps = torch.from_numpy(imageset['weight_map'].astype(np.float32))
             L, H, W = lrs.shape
 
             if L >= self.min_L:  # pad input to top_k
                 lr_batch.append(lrs[:self.min_L])
                 weights_batch.append(weights[:self.min_L])
+                weight_maps_b.append(weight_maps[:self.min_L])
                 alpha_batch.append(torch.ones(self.min_L))
             else:
                 pad = torch.zeros(self.min_L - L, H, W)
@@ -100,6 +103,9 @@ class collateFunction():
                     [weights, torch.zeros(self.min_L - L)], dim=0))
                 alpha_batch.append(
                     torch.cat([torch.ones(L), torch.zeros(self.min_L - L)], dim=0))
+                weight_maps_b.append(torch.cat(
+                    [weight_maps, torch.zeros(
+                        self.min_L - L, weight_maps.shape[1], weight_maps.shape[2])], dim=0))
 
             hr = imageset['hr']
             if self.train_batch and hr is not None:
@@ -111,6 +117,7 @@ class collateFunction():
         padded_lr_batch = torch.stack(lr_batch, dim=0)
         alpha_batch = torch.stack(alpha_batch, dim=0)
         weights_batch = torch.stack(weights_batch, dim=0)
+        weight_maps_b = torch.stack(weight_maps_b, dim=0)
 
         if self.train_batch:
             hr_batch = torch.stack(hr_batch, dim=0)
@@ -118,7 +125,7 @@ class collateFunction():
         else:
             hr_batch, hm_batch = None, None
 
-        return padded_lr_batch, alpha_batch, weights_batch, hr_batch, hm_batch, isn_batch
+        return padded_lr_batch, alpha_batch, weights_batch, weight_maps_b, hr_batch, hm_batch, isn_batch
 
 
 def imsetshow(imageset, k=None, show_map=True, show_histogram=True, figsize=None, **kwargs):

@@ -177,7 +177,7 @@ def trainAndGetBestModel(fusion_model, regis_model, optimizer, dataloaders, base
         train_step = 0
 
         # Iterate over data.
-        for lrs, alphas, weights, hrs, hr_maps, names in iterate(dataloaders['train'], cluster=cluster):
+        for lrs, alphas, weights, weight_maps, hrs, hr_maps, names,  in iterate(dataloaders['train'], cluster=cluster):
             
             optimizer.zero_grad()  # zero the parameter gradients
             lrs = lrs.float().to(device)
@@ -185,10 +185,11 @@ def trainAndGetBestModel(fusion_model, regis_model, optimizer, dataloaders, base
             weights = weights.float().to(device)
             hr_maps = hr_maps.float().to(device)
             hrs = hrs.float().to(device)
+            weight_maps = weight_maps.float().to(device)
 
             if weighted_order:
                 alphas = weights
-            srs = fusion_model(lrs, alphas)  # fuse multi frames (B, 1, 3*W, 3*H)
+            srs = fusion_model(lrs, alphas, weight_maps)  # fuse multi frames (B, 1, 3*W, 3*H)
 
             # Register batch wrt HR
             shifts = register_batch(regis_model,
@@ -212,17 +213,18 @@ def trainAndGetBestModel(fusion_model, regis_model, optimizer, dataloaders, base
         fusion_model.eval()
         val_score = 0.0  # monitor val score
 
-        for lrs, alphas, weights, hrs, hr_maps, names in dataloaders['val']:
+        for lrs, alphas, weights, weight_maps, hrs, hr_maps, names in dataloaders['val']:
             lrs = lrs.float().to(device)
             alphas = alphas.float().to(device)
             weights = weights.float().to(device)
+            weight_maps = weight_maps.float().to(device)
             hrs = hrs.numpy()
             hr_maps = hr_maps.numpy()
 
             if weighted_order:
                 alphas = weights
 
-            srs = fusion_model(lrs, alphas)[:, 0]  # fuse multi frames (B, 1, 3*W, 3*H)
+            srs = fusion_model(lrs, alphas, weight_maps)[:, 0]  # fuse multi frames (B, 1, 3*W, 3*H)
 
             # compute ESA score
             srs = srs.detach().cpu().numpy()
@@ -243,17 +245,18 @@ def trainAndGetBestModel(fusion_model, regis_model, optimizer, dataloaders, base
         wandb.log({f"val_lr": wandb.Image(torchvision.utils.make_grid(lrs_wandb))}, step=epoch)
 
         train_score = 0.0  # monitor train score
-        for lrs, alphas, weights, hrs, hr_maps, names in dataloaders['train']:
+        for lrs, alphas, weights, weight_maps, hrs, hr_maps, names in dataloaders['train']:
             lrs = lrs.float().to(device)
             alphas = alphas.float().to(device)
             weights = weights.float().to(device)
+            weight_maps = weight_maps.float().to(device)
             hrs = hrs.numpy()
             hr_maps = hr_maps.numpy()
 
             if weighted_order:
                 alphas = weights
 
-            srs = fusion_model(lrs, alphas)[:, 0]  # fuse multi frames (B, 1, 3*W, 3*H)
+            srs = fusion_model(lrs, alphas, weight_maps)[:, 0]  # fuse multi frames (B, 1, 3*W, 3*H)
 
             # compute ESA score
             srs = srs.detach().cpu().numpy()

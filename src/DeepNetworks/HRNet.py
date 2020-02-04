@@ -200,7 +200,7 @@ class HRNet(nn.Module):
         self.fuse = RecuversiveNet(config["recursive"])
         self.decode = Decoder(config["decoder"])
 
-    def forward(self, lrs, alphas):
+    def forward(self, lrs, alphas, weight_maps=None):
         '''
         Super resolves a batch of low-resolution images.
         Args:
@@ -214,8 +214,13 @@ class HRNet(nn.Module):
         lrs = lrs.view(-1, seq_len, 1, heigth, width)
         alphas = alphas.view(-1, seq_len, 1, 1, 1)
 
-        refs, _ = torch.median(lrs[:, :9], 1, keepdim=True)  # reference image aka anchor, shared across multiple views
-        refs = refs.repeat(1, seq_len, 1, 1, 1)
+        if weight_maps is not None:
+            weight_maps = weight_maps.view(-1, seq_len, 1, heigth, width)
+            refs = torch.mul(weight_maps, lrs).mean(dim=1)
+            refs = refs.repeat(1, seq_len, 1, 1).unsqueeze(2)
+        else:
+            refs, _ = torch.median(lrs[:, :9], 1, keepdim=True)  # reference image aka anchor, shared across multiple views
+            refs = refs.repeat(1, seq_len, 1, 1, 1)
         stacked_input = torch.cat([lrs, refs], 2) # tensor (B, L, 2*C_in, W, H)
         
         stacked_input = stacked_input.view(batch_size * seq_len, 2, width, heigth)

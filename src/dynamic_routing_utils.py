@@ -54,11 +54,11 @@ def dist(v1, v2, dim=0):
     "Get Euclidean distance"
     return torch.pow(v1 - v2, 2).sum(dim=dim)
 
-def route_per_pixel(images, it=100):
+def route_per_pixel(images, its=100):
     n, ch, w, h = images.shape
     b = torch.ones(n, w, h)
     c = nn.Softmax(dim=0)(b)
-    for _ in range(it):
+    for _ in range(its):
         c_ = c.unsqueeze(1).repeat((1, ch, 1, 1))
         # a weighted image
         s = torch.mul(c_, images).sum(dim=0)

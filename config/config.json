@@ -50,8 +50,7 @@
     "n_views": 2,
     "n_workers": 4,
     "crop": 3,
-    "weighted_order": false,
-
+    "weighted_order": true,
 
     "lr": 0.0007,
     "lr_step": 2,
@@ -62,6 +61,8 @@
     "lr_weights": "smooth_routing",
     "sorted_k": false,
     "outlier": "replace",
+
+    "weight_maps_type": "routing",
 
     "create_patches": true,
     "patch_size": 64,
