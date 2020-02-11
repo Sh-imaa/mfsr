@@ -218,12 +218,15 @@ class HRNet(nn.Module):
             weight_maps = weight_maps.view(-1, seq_len, 1, heigth, width)
             refs = torch.mul(weight_maps, lrs).mean(dim=1)
             refs = refs.repeat(1, seq_len, 1, 1).unsqueeze(2)
+            stacked_input = torch.cat([lrs, refs, weight_maps], 2)
+            stacked_input = stacked_input.view(batch_size * seq_len, 3, width, heigth)
         else:
             refs, _ = torch.median(lrs[:, :9], 1, keepdim=True)  # reference image aka anchor, shared across multiple views
             refs = refs.repeat(1, seq_len, 1, 1, 1)
-        stacked_input = torch.cat([lrs, refs], 2) # tensor (B, L, 2*C_in, W, H)
+            stacked_input = torch.cat([lrs, refs], 2) # tensor (B, L, 2*C_in, W, H)
+            stacked_input = stacked_input.view(batch_size * seq_len, 2, width, heigth)
         
-        stacked_input = stacked_input.view(batch_size * seq_len, 2, width, heigth)
+        
         layer1 = self.encode(stacked_input) # encode input tensor
         layer1 = layer1.view(batch_size, seq_len, -1, width, heigth) # tensor (B, L, C, W, H)
 

@@ -1,6 +1,7 @@
 """ Python script to load, augment and preprocess batches of data """
 
 from collections import OrderedDict
+import threading
 import numpy as np
 from os.path import join, exists, basename, isfile
 
@@ -14,6 +15,7 @@ from tqdm import tqdm
 
 from src.dynamic_routing_utils import smooth_weights, get_routing_clusters
 
+lock = threading.Lock()
 
 def get_patch(img, x, y, size=32):
     """
@@ -99,7 +101,7 @@ def read_imageset(imset_dir, create_patches=False, patch_size=64, seed=None,
           - hr_map: high-res status map.
           - weight: precalculated average goodness scores
     """
-
+    lock.acquire()
     # Read asset names
     idx_names = np.array([basename(path)[2:-4] for path in glob.glob(join(imset_dir, 'QM*.png'))])
     idx_names = np.sort(idx_names)
@@ -185,6 +187,7 @@ def read_imageset(imset_dir, create_patches=False, patch_size=64, seed=None,
     elif outlier == "replace":
         if isfile(join(imset_dir, 'routing_weights.npy')):
             try:
+                count = 0
                 weights_ = np.load(join(imset_dir, 'routing_weights.npy'))  # load routing scores
                 weights_ = weights_.squeeze()
                 _, good_indeces, _ = get_routing_clusters(weights_)
@@ -192,10 +195,14 @@ def read_imageset(imset_dir, create_patches=False, patch_size=64, seed=None,
                 good_indeces = ['{0:03}'.format(i) for i in good_indeces]
                 all_frames = len(idx_names)
                 idx_names = [i for i in idx_names if i in good_indeces]
+                n += len([i for i in good_indeces if i not in idx_names])
                 weights = weights[:len(idx_names)]
                 original_w = weights[:]
                 original_ind = idx_names[:]
                 while len(idx_names) < all_frames:
+                    if count > 10:
+                        break
+                    count += 1
                     weights = np.concatenate((weights, original_w[:n]))
                     idx_names += original_ind[:n]
 
@@ -231,7 +238,7 @@ def read_imageset(imset_dir, create_patches=False, patch_size=64, seed=None,
         if hr is not None:
             hr = get_patch(hr, x * 3, y * 3, patch_size * 3)
 
-
+    lock.release()
     # Organise all assets into an ImageSet (OrderedDict)
     imageset = ImageSet(name=basename(imset_dir),
                         lr=np.array(lr_images),

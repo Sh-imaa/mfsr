@@ -18,6 +18,6 @@ From: ubuntu:18.04
 
     export LC_ALL=C.UTF-8
     pip3 install numpy sklearn scikit-image
-    pip3 install opencv-python
+    pip3 install addict
     pip3 install graphql-core==2.0 wandb Pillow==5.4 pyyaml seaborn
     pip3 install --no-cache-dir torch torchvision matplotlib ipython tqdm tensorboardX

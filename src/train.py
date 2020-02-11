@@ -212,7 +212,7 @@ def trainAndGetBestModel(fusion_model, regis_model, optimizer, dataloaders, base
         # Eval
         fusion_model.eval()
         val_score = 0.0  # monitor val score
-
+        print('eval val')
         for lrs, alphas, weights, weight_maps, hrs, hr_maps, names in dataloaders['val']:
             lrs = lrs.float().to(device)
             alphas = alphas.float().to(device)
@@ -245,6 +245,7 @@ def trainAndGetBestModel(fusion_model, regis_model, optimizer, dataloaders, base
         wandb.log({f"val_lr": wandb.Image(torchvision.utils.make_grid(lrs_wandb))}, step=epoch)
 
         train_score = 0.0  # monitor train score
+        print('train eval')
         for lrs, alphas, weights, weight_maps, hrs, hr_maps, names in dataloaders['train']:
             lrs = lrs.float().to(device)
             alphas = alphas.float().to(device)
