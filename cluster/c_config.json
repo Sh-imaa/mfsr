@@ -61,7 +61,9 @@
     "beta": 50.0,
     "lr_weights": "smooth_routing",
     "sorted_k": false,
-    "outlier": "remove",
+    "outlier": "keep",
+
+    "weight_maps_type": "routing",
 
     "create_patches": true,
     "patch_size": 64,
