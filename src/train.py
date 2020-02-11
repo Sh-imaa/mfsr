@@ -157,6 +157,7 @@ def trainAndGetBestModel(fusion_model, regis_model, optimizer, dataloaders, base
     offset = (3 * config["training"]["patch_size"] - 128) // 2
     C = config["training"]["crop"]
     weighted_order = config["training"]["weighted_order"]
+    weighted_pixels = config["training"]["weighted_pixels"]
     torch_mask = get_crop_mask(patch_size=P, crop_size=C)
     torch_mask = torch_mask.to(device)  # crop borders (loss)
 
@@ -189,7 +190,10 @@ def trainAndGetBestModel(fusion_model, regis_model, optimizer, dataloaders, base
 
             if weighted_order:
                 alphas = weights
-            srs = fusion_model(lrs, alphas, weight_maps)  # fuse multi frames (B, 1, 3*W, 3*H)
+            if weighted_pixels:
+                alphas = weight_maps
+
+            srs = fusion_model(lrs, alphas, weight_maps, pixels_weights=weighted_pixels)  # fuse multi frames (B, 1, 3*W, 3*H)
 
             # Register batch wrt HR
             shifts = register_batch(regis_model,
@@ -212,7 +216,7 @@ def trainAndGetBestModel(fusion_model, regis_model, optimizer, dataloaders, base
         # Eval
         fusion_model.eval()
         val_score = 0.0  # monitor val score
-        print('eval val')
+
         for lrs, alphas, weights, weight_maps, hrs, hr_maps, names in dataloaders['val']:
             lrs = lrs.float().to(device)
             alphas = alphas.float().to(device)
@@ -223,8 +227,10 @@ def trainAndGetBestModel(fusion_model, regis_model, optimizer, dataloaders, base
 
             if weighted_order:
                 alphas = weights
+            if weighted_pixels:
+                alphas = weight_maps
 
-            srs = fusion_model(lrs, alphas, weight_maps)[:, 0]  # fuse multi frames (B, 1, 3*W, 3*H)
+            srs = fusion_model(lrs, alphas, weight_maps, pixels_weights=weighted_pixels)[:, 0]  # fuse multi frames (B, 1, 3*W, 3*H)
 
             # compute ESA score
             srs = srs.detach().cpu().numpy()
@@ -245,7 +251,6 @@ def trainAndGetBestModel(fusion_model, regis_model, optimizer, dataloaders, base
         wandb.log({f"val_lr": wandb.Image(torchvision.utils.make_grid(lrs_wandb))}, step=epoch)
 
         train_score = 0.0  # monitor train score
-        print('train eval')
         for lrs, alphas, weights, weight_maps, hrs, hr_maps, names in dataloaders['train']:
             lrs = lrs.float().to(device)
             alphas = alphas.float().to(device)
@@ -256,8 +261,10 @@ def trainAndGetBestModel(fusion_model, regis_model, optimizer, dataloaders, base
 
             if weighted_order:
                 alphas = weights
+            if weighted_pixels:
+                alphas = weight_maps
 
-            srs = fusion_model(lrs, alphas, weight_maps)[:, 0]  # fuse multi frames (B, 1, 3*W, 3*H)
+            srs = fusion_model(lrs, alphas, weight_maps, pixels_weights=weighted_pixels)[:, 0]  # fuse multi frames (B, 1, 3*W, 3*H)
 
             # compute ESA score
             srs = srs.detach().cpu().numpy()

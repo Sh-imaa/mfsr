@@ -20,7 +20,7 @@
     },
     "recursive": {
       "dropout": 0.5,
-      "alpha_residual": "padded",
+      "alpha_residual": "weight_maps",
       "in_channels": 64,
       "num_layers" : 2,
       "kernel_size": 3
@@ -46,11 +46,12 @@
     "batch_size": 2,
     "data_limit": 4,
 
-    "min_L": 2,
-    "n_views": 2,
+    "min_L": 4,
+    "n_views": 4,
     "n_workers": 4,
     "crop": 3,
     "weighted_order": true,
+    "weighted_pixels": true,
 
     "lr": 0.0007,
     "lr_step": 2,

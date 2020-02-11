@@ -51,6 +51,7 @@
     "n_workers": 4,
     "crop": 3,
     "weighted_order": false,
+    "weighted_pixels": true,
 
 
     "lr": 0.0003,

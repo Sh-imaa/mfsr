@@ -142,6 +142,16 @@ class RecuversiveNet(nn.Module):
                 x = alice * alphas_alice + bob * alphas_bob + x * torch.min(alphas_, dim=0)[0]
                 alphas = torch.max(alphas_, dim=0)[0]
 
+            elif self.alpha_residual == 'weight_maps':
+                alphas_alice = alphas[:, :half_len]
+                alphas_bob = alphas[:, half_len:nviews - parity]
+                alphas_bob = torch.flip(alphas_bob, [1])
+                alphas_ = torch.stack([alphas_alice, alphas_bob])
+                x = alice * alphas_alice + bob * alphas_bob + x * torch.min(alphas_, dim=0)[0]
+                alphas = torch.max(alphas_, dim=0)[0]
+
+
+
             nviews = half_len
             parity = nviews % 2
             half_len = nviews // 2
@@ -200,7 +210,7 @@ class HRNet(nn.Module):
         self.fuse = RecuversiveNet(config["recursive"])
         self.decode = Decoder(config["decoder"])
 
-    def forward(self, lrs, alphas, weight_maps=None):
+    def forward(self, lrs, alphas, weight_maps=None, pixels_weights=False):
         '''
         Super resolves a batch of low-resolution images.
         Args:
@@ -212,7 +222,11 @@ class HRNet(nn.Module):
 
         batch_size, seq_len, heigth, width = lrs.shape
         lrs = lrs.view(-1, seq_len, 1, heigth, width)
-        alphas = alphas.view(-1, seq_len, 1, 1, 1)
+        if pixels_weights:
+            alphas = alphas.view(-1, seq_len, 1, heigth, width)
+        else:
+            alphas = alphas.view(-1, seq_len, 1, 1, 1)
+
 
         if weight_maps is not None:
             weight_maps = weight_maps.view(-1, seq_len, 1, heigth, width)
