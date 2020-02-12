@@ -89,17 +89,19 @@ def get_loss(srs, hrs, hr_maps, metric='cMSE', l=0.5):
     nclear = torch.sum(hr_maps, dim=(1, 2))  # Number of clear pixels in target image
     bright = torch.sum(hr_maps * (hrs - srs), dim=(1, 2)).clone().detach() / nclear  # Correct for brightness
     loss = torch.sum(hr_maps * criterion(srs + bright.view(-1, 1, 1), hrs), dim=(1, 2)) / nclear  # cMSE(A,B) for each point
+
     if metric == 'cMSE':
         return loss
-    elif metric == 'SSIM':
-        ssim_loss = pytorch_ssim.SSIM()
 
+    if metric == 'SSIM':
+        ssim_loss = pytorch_ssim.SSIM()
         return -ssim_loss((hr_maps * srs).unsqueeze(1), (hr_maps * hrs).unsqueeze(1))
 
     elif metric == 'SSIM_cPSNR':
         ssim_loss = pytorch_ssim.SSIM()
         ssim_part = ssim_loss((hr_maps * srs).unsqueeze(1), (hr_maps * hrs).unsqueeze(1))
-        return -10 * torch.log10(loss) - l * ssim_part
+        snr_part = -10 * torch.log10(loss)
+        return (1 - l) * snr_part - l * ssim_part
 
     return -10 * torch.log10(loss)  # cPSNR
 
