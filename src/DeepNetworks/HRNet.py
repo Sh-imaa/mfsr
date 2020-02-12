@@ -95,10 +95,15 @@ class RecuversiveNet(nn.Module):
         dr = config["dropout"]
         kernel_size = config["kernel_size"]
         padding = kernel_size // 2
+        self.attention = config["attention"]
+        if self.attention:
+            in_channels = 2 * self.input_channels + 2
+        else:
+            in_channels = 2 * self.input_channels
 
         self.fuse = nn.Sequential(
-            ResidualBlock(2 * self.input_channels, kernel_size),
-            nn.Conv2d(in_channels=2 * self.input_channels, out_channels=self.input_channels,
+            ResidualBlock(in_channels , kernel_size),
+            nn.Conv2d(in_channels=in_channels, out_channels=self.input_channels,
                       kernel_size=kernel_size, padding=padding),
             nn.Dropout(p=dr),
             nn.PReLU())
@@ -122,35 +127,48 @@ class RecuversiveNet(nn.Module):
             bob = x[:, half_len:nviews - parity] # second half hidden states (B, L/2, C, W, H)
             bob = torch.flip(bob, [1])
 
-            alice_and_bob = torch.cat([alice, bob], 2)  # concat hidden states accross channels (B, L/2, 2*C, W, H)
-            alice_and_bob = alice_and_bob.view(-1, 2 * channels, width, heigth)
-            x = self.fuse(alice_and_bob)
-            x = x.view(batch_size, half_len, channels, width, heigth)  # new hidden states (B, L/2, C, W, H)
-
-            if self.alpha_residual == 'padding': # skip connect padded views (alphas_bob = 0)
+            if self.attention == True:
                 alphas_alice = alphas[:, :half_len]
                 alphas_bob = alphas[:, half_len:nviews - parity]
                 alphas_bob = torch.flip(alphas_bob, [1])
+
+                alice_and_bob = torch.cat([alice, alphas_alice, bob, alphas_bob], 2)
+                alice_and_bob = alice_and_bob.view(-1, (2 * channels + 2), width, heigth)
+                x = self.fuse(alice_and_bob)
+                x = x.view(batch_size, half_len, channels, width, heigth)
+                alphas_ = torch.stack([alphas_alice, alphas_bob])
+                alphas = torch.max(alphas_, dim=0)[0]
+            if self.alpha_residual == 'padding':
                 x = alice + alphas_bob * x
-                alphas = alphas_alice
 
-            elif self.alpha_residual == 'weighted':
-                alphas_alice = alphas[:, :half_len]
-                alphas_bob = alphas[:, half_len:nviews - parity]
-                alphas_bob = torch.flip(alphas_bob, [1])
-                alphas_ = torch.stack([alphas_alice, alphas_bob])
-                x = alice * alphas_alice + bob * alphas_bob + x * torch.min(alphas_, dim=0)[0]
-                alphas = torch.max(alphas_, dim=0)[0]
+            else:
+                alice_and_bob = torch.cat([alice, bob], 2)  # concat hidden states accross channels (B, L/2, 2*C, W, H)
+                alice_and_bob = alice_and_bob.view(-1, 2 * channels, width, heigth)
+                x = self.fuse(alice_and_bob)
+                x = x.view(batch_size, half_len, channels, width, heigth)  # new hidden states (B, L/2, C, W, H)
 
-            elif self.alpha_residual == 'weight_maps':
-                alphas_alice = alphas[:, :half_len]
-                alphas_bob = alphas[:, half_len:nviews - parity]
-                alphas_bob = torch.flip(alphas_bob, [1])
-                alphas_ = torch.stack([alphas_alice, alphas_bob])
-                x = alice * alphas_alice + bob * alphas_bob + x * torch.min(alphas_, dim=0)[0]
-                alphas = torch.max(alphas_, dim=0)[0]
+                if self.alpha_residual == 'padding': # skip connect padded views (alphas_bob = 0)
+                    alphas_alice = alphas[:, :half_len]
+                    alphas_bob = alphas[:, half_len:nviews - parity]
+                    alphas_bob = torch.flip(alphas_bob, [1])
+                    x = alice + alphas_bob * x
+                    alphas = alphas_alice
 
+                elif self.alpha_residual == 'weighted':
+                    alphas_alice = alphas[:, :half_len]
+                    alphas_bob = alphas[:, half_len:nviews - parity]
+                    alphas_bob = torch.flip(alphas_bob, [1])
+                    alphas_ = torch.stack([alphas_alice, alphas_bob])
+                    x = alice * alphas_alice + bob * alphas_bob + x * torch.min(alphas_, dim=0)[0]
+                    alphas = torch.max(alphas_, dim=0)[0]
 
+                elif self.alpha_residual == 'weight_maps':
+                    alphas_alice = alphas[:, :half_len]
+                    alphas_bob = alphas[:, half_len:nviews - parity]
+                    alphas_bob = torch.flip(alphas_bob, [1])
+                    alphas_ = torch.stack([alphas_alice, alphas_bob])
+                    x = alice * alphas_alice + bob * alphas_bob + x * torch.min(alphas_, dim=0)[0]
+                    alphas = torch.max(alphas_, dim=0)[0]
 
             nviews = half_len
             parity = nviews % 2

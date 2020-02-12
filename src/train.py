@@ -17,6 +17,8 @@ from torch.utils.data import DataLoader
 from torch.utils.data.sampler import SubsetRandomSampler
 from torch.optim import lr_scheduler
 
+import pytorch_ssim
+
 from src.DeepNetworks.HRNet import HRNet
 from src.DeepNetworks.ShiftNet import ShiftNet
 
@@ -68,7 +70,7 @@ def apply_shifts(shiftNet, images, thetas, device):
     return new_images.view(-1, n_views, images.size(2), images.size(3))
 
 
-def get_loss(srs, hrs, hr_maps, metric='cMSE'):
+def get_loss(srs, hrs, hr_maps, metric='cMSE', l=0.5):
     """
     Computes ESA loss for each instance in a batch.
     Args:
@@ -89,6 +91,16 @@ def get_loss(srs, hrs, hr_maps, metric='cMSE'):
     loss = torch.sum(hr_maps * criterion(srs + bright.view(-1, 1, 1), hrs), dim=(1, 2)) / nclear  # cMSE(A,B) for each point
     if metric == 'cMSE':
         return loss
+    elif metric == 'SSIM':
+        ssim_loss = pytorch_ssim.SSIM()
+
+        return -ssim_loss((hr_maps * srs).unsqueeze(1), (hr_maps * hrs).unsqueeze(1))
+
+    elif metric == 'SSIM_cPSNR':
+        ssim_loss = pytorch_ssim.SSIM()
+        ssim_part = ssim_loss((hr_maps * srs).unsqueeze(1), (hr_maps * hrs).unsqueeze(1))
+        return -10 * torch.log10(loss) - l * ssim_part
+
     return -10 * torch.log10(loss)  # cPSNR
 
 
@@ -204,7 +216,7 @@ def trainAndGetBestModel(fusion_model, regis_model, optimizer, dataloaders, base
             # Training loss
             cropped_mask = torch_mask[0] * hr_maps  # Compute current mask (Batch size, W, H)
             # srs_shifted = torch.clamp(srs_shifted, min=0.0, max=1.0)  # correct over/under-shoots
-            loss = -get_loss(srs_shifted, hrs, cropped_mask, metric='cPSNR')
+            loss = -get_loss(srs_shifted, hrs, cropped_mask, metric='SSIM')
             loss = torch.mean(loss)
             loss += config["training"]["lambda"] * torch.mean(shifts)**2
 

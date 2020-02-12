@@ -20,7 +20,8 @@
     },
     "recursive": {
       "dropout": 0.5,
-      "alpha_residual": "weight_maps",
+      "attention": true,
+      "alpha_residual": "padding",
       "in_channels": 64,
       "num_layers" : 2,
       "kernel_size": 3
