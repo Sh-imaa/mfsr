@@ -138,8 +138,8 @@ class RecuversiveNet(nn.Module):
                 x = x.view(batch_size, half_len, channels, width, heigth)
                 alphas_ = torch.stack([alphas_alice, alphas_bob])
                 alphas = torch.max(alphas_, dim=0)[0]
-            if self.alpha_residual == 'padding':
-                x = alice + alphas_bob * x
+                if self.alpha_residual == 'padding':
+                    x = alice + alphas_bob * x
 
             else:
                 alice_and_bob = torch.cat([alice, bob], 2)  # concat hidden states accross channels (B, L/2, 2*C, W, H)
