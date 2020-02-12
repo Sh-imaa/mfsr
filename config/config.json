@@ -13,7 +13,7 @@
   "network": {
     "encoder": {
       "dropout": 0.5,
-      "in_channels": 3,
+      "in_channels": 2,
       "num_layers" : 2,
       "kernel_size": 3,
       "channel_size": 64
@@ -53,6 +53,7 @@
     "crop": 3,
     "weighted_order": true,
     "weighted_pixels": true,
+    "extra_channel":false,
 
     "lr": 0.0007,
     "lr_step": 2,

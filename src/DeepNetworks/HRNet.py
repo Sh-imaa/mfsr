@@ -228,7 +228,7 @@ class HRNet(nn.Module):
         self.fuse = RecuversiveNet(config["recursive"])
         self.decode = Decoder(config["decoder"])
 
-    def forward(self, lrs, alphas, weight_maps=None, pixels_weights=False):
+    def forward(self, lrs, alphas, weight_maps=None, pixels_weights=False, extra_channel=False):
         '''
         Super resolves a batch of low-resolution images.
         Args:
@@ -246,7 +246,7 @@ class HRNet(nn.Module):
             alphas = alphas.view(-1, seq_len, 1, 1, 1)
 
 
-        if weight_maps is not None:
+        if extra_channel:
             weight_maps = weight_maps.view(-1, seq_len, 1, heigth, width)
             refs = torch.mul(weight_maps, lrs).mean(dim=1)
             refs = refs.repeat(1, seq_len, 1, 1).unsqueeze(2)

@@ -170,6 +170,7 @@ def trainAndGetBestModel(fusion_model, regis_model, optimizer, dataloaders, base
     C = config["training"]["crop"]
     weighted_order = config["training"]["weighted_order"]
     weighted_pixels = config["training"]["weighted_pixels"]
+    extra_channel = config["training"]["extra_channel"]
     torch_mask = get_crop_mask(patch_size=P, crop_size=C)
     torch_mask = torch_mask.to(device)  # crop borders (loss)
 
@@ -205,7 +206,7 @@ def trainAndGetBestModel(fusion_model, regis_model, optimizer, dataloaders, base
             if weighted_pixels:
                 alphas = weight_maps
 
-            srs = fusion_model(lrs, alphas, weight_maps, pixels_weights=weighted_pixels)  # fuse multi frames (B, 1, 3*W, 3*H)
+            srs = fusion_model(lrs, alphas, weight_maps, pixels_weights=weighted_pixels, extra_channel=extra_channel)  # fuse multi frames (B, 1, 3*W, 3*H)
 
             # Register batch wrt HR
             shifts = register_batch(regis_model,
