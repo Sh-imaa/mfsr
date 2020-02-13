@@ -1,33 +1,33 @@
 {
   "paths": {
-    "prefix": "$SLURM_TMPDIR/data/probav_data/",
-    "checkpoint_dir": "$SCRATCH/mfsr/models"
+    "prefix": "data/data/probav_data/",
+    "checkpoint_dir": "models"
   },
 
   "misc": {
-    "tag": "clearance_run",
+    "tag": "random_run",
     "cluster": true
   }
-  ,
 
+  ,
   "network": {
     "encoder": {
-      "dropout": 0,
-      "in_channels": 2,
+      "dropout": 0.5,
+      "in_channels": 3,
       "num_layers" : 2,
       "kernel_size": 3,
       "channel_size": 64
     },
     "recursive": {
-      "dropout": 0,
+      "dropout": 0.5,
+      "attention": false,
       "alpha_residual": "padding",
-      "attention": true,
       "in_channels": 64,
       "num_layers" : 2,
       "kernel_size": 3
     },
     "decoder": {
-      "dropout": 0,
+      "dropout": 0.5,
       "deconv": {
         "in_channels": 64,
         "kernel_size": 3,
@@ -45,28 +45,28 @@
   "training": {
     "num_epochs": 400,
     "batch_size": 16,
-    "data_limit": -1,
+    "data_limit": 4,
 
     "min_L": 32,
     "n_views": 32,
     "n_workers": 4,
     "crop": 3,
 
-    "lr_weights": "smooth_routing",
-    "weight_maps_type": "routing",
-    "sorted_k": false,
-    "outlier": "keep",
+    "weighted_order": "binary",
+    "extra_channel": true,
+    "anchor": "median",
 
-    "weighted_order": false,
-    "weighted_pixels": true,
-    "extra_channel":false,
-
-    "lr": 0.0003,
+    "lr": 0.0007,
     "lr_step": 2,
     "lr_decay": 0.97,
 
     "load_lr_maps": false,
     "beta": 50.0,
+    "lr_weights": "smooth_routing",
+    "sorted_k": false,
+    "outlier": "replace",
+
+    "weight_maps_type": "routing",
 
     "create_patches": true,
     "patch_size": 64,

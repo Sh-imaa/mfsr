@@ -13,7 +13,7 @@
   "network": {
     "encoder": {
       "dropout": 0.5,
-      "in_channels": 2,
+      "in_channels": 3,
       "num_layers" : 2,
       "kernel_size": 3,
       "channel_size": 64
@@ -21,7 +21,7 @@
     "recursive": {
       "dropout": 0.5,
       "attention": false,
-      "alpha_residual": "weighted",
+      "alpha_residual": "padding",
       "in_channels": 64,
       "num_layers" : 2,
       "kernel_size": 3
