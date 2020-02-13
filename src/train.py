@@ -222,7 +222,7 @@ def trainAndGetBestModel(fusion_model, regis_model, optimizer, dataloaders, base
             # Training loss
             cropped_mask = torch_mask[0] * hr_maps  # Compute current mask (Batch size, W, H)
             # srs_shifted = torch.clamp(srs_shifted, min=0.0, max=1.0)  # correct over/under-shoots
-            loss = -get_loss(srs_shifted, hrs, cropped_mask, metric='SSIM')
+            loss = -get_loss(srs_shifted, hrs, cropped_mask, metric='cPSNR')
             loss = torch.mean(loss)
             loss += config["training"]["lambda"] * torch.mean(shifts)**2
 
