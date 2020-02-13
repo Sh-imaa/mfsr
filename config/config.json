@@ -51,9 +51,14 @@
     "n_views": 4,
     "n_workers": 4,
     "crop": 3,
-    "weighted_order": true,
-    "weighted_pixels": true,
+
+    // if to use weights instead of binary alphas
+    // options are frame_weights/ pixels_weights the default is just binary
+    "weighted_order": "frame_weights",
+    // if to use pixel-wise weights as an extra channel in the encoder
     "extra_channel":false,
+    // if to use the "median" frame as an anchor or weighted_anchor for weighted average
+    "anchor": "median",
 
     "lr": 0.0007,
     "lr_step": 2,

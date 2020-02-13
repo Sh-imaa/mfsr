@@ -149,6 +149,12 @@ def trainAndGetBestModel(fusion_model, regis_model, optimizer, dataloaders, base
     min_L = config["training"]["min_L"]  # minimum number of views
     beta = config["training"]["beta"]
 
+    weighted_order = config["training"]["weighted_order"]
+    weighted_pixels = config["training"]["weighted_pixels"]
+    extra_channel = config["training"]["extra_channel"]
+    anchor = config["training"]["anchor"]
+
+    # training local or in cluster (small differences in logging)
     cluster = config["misc"]["cluster"]
 
     subfolder_pattern = 'batch_{}_views_{}_min_{}_beta_{}_time_{}'.format(
@@ -170,9 +176,6 @@ def trainAndGetBestModel(fusion_model, regis_model, optimizer, dataloaders, base
     P = config["training"]["patch_size"]
     offset = (3 * config["training"]["patch_size"] - 128) // 2
     C = config["training"]["crop"]
-    weighted_order = config["training"]["weighted_order"]
-    weighted_pixels = config["training"]["weighted_pixels"]
-    extra_channel = config["training"]["extra_channel"]
     torch_mask = get_crop_mask(patch_size=P, crop_size=C)
     torch_mask = torch_mask.to(device)  # crop borders (loss)
 
@@ -203,12 +206,13 @@ def trainAndGetBestModel(fusion_model, regis_model, optimizer, dataloaders, base
             hrs = hrs.float().to(device)
             weight_maps = weight_maps.float().to(device)
 
-            if weighted_order:
+            # alphas can be binary or based on weights, default is binary
+            if weighted_order == 'frame_weights':
                 alphas = weights
-            if weighted_pixels:
+            elif weighted_order == 'pixels_weights'
                 alphas = weight_maps
 
-            srs = fusion_model(lrs, alphas, weight_maps, pixels_weights=weighted_pixels, extra_channel=extra_channel)  # fuse multi frames (B, 1, 3*W, 3*H)
+            srs = fusion_model(lrs, alphas, weight_maps, extra_channel=extra_channel, anchor=anchor)  # fuse multi frames (B, 1, 3*W, 3*H)
 
             # Register batch wrt HR
             shifts = register_batch(regis_model,

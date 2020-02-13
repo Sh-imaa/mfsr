@@ -137,9 +137,9 @@ class RecuversiveNet(nn.Module):
                 x = self.fuse(alice_and_bob)
                 x = x.view(batch_size, half_len, channels, width, heigth)
                 alphas_ = torch.stack([alphas_alice, alphas_bob])
-                alphas = torch.max(alphas_, dim=0)[0]
                 if self.alpha_residual == 'padding':
                     x = alice + alphas_bob * x
+                alphas = torch.max(alphas_, dim=0)[0]
 
             else:
                 alice_and_bob = torch.cat([alice, bob], 2)  # concat hidden states accross channels (B, L/2, 2*C, W, H)
@@ -228,7 +228,8 @@ class HRNet(nn.Module):
         self.fuse = RecuversiveNet(config["recursive"])
         self.decode = Decoder(config["decoder"])
 
-    def forward(self, lrs, alphas, weight_maps=None, pixels_weights=False, extra_channel=False):
+    def forward(self, lrs, alphas, weight_maps=None,
+                extra_channel=False, anchor='median'):
         '''
         Super resolves a batch of low-resolution images.
         Args:
@@ -240,21 +241,25 @@ class HRNet(nn.Module):
 
         batch_size, seq_len, heigth, width = lrs.shape
         lrs = lrs.view(-1, seq_len, 1, heigth, width)
-        if pixels_weights:
+        # check if alphas is a map or single number
+        if alphas.shape[-1] > 1:
             alphas = alphas.view(-1, seq_len, 1, heigth, width)
         else:
             alphas = alphas.view(-1, seq_len, 1, 1, 1)
 
-
-        if extra_channel:
+        # reference image aka anchor, shared across multiple views
+        if anchor == 'weighted_anchor':
             weight_maps = weight_maps.view(-1, seq_len, 1, heigth, width)
             refs = torch.mul(weight_maps, lrs).mean(dim=1)
             refs = refs.repeat(1, seq_len, 1, 1).unsqueeze(2)
+        else:
+            refs, _ = torch.median(lrs[:, :9], 1, keepdim=True) 
+            refs = refs.repeat(1, seq_len, 1, 1, 1)
+
+        if extra_channel:
             stacked_input = torch.cat([lrs, refs, weight_maps], 2)
             stacked_input = stacked_input.view(batch_size * seq_len, 3, width, heigth)
         else:
-            refs, _ = torch.median(lrs[:, :9], 1, keepdim=True)  # reference image aka anchor, shared across multiple views
-            refs = refs.repeat(1, seq_len, 1, 1, 1)
             stacked_input = torch.cat([lrs, refs], 2) # tensor (B, L, 2*C_in, W, H)
             stacked_input = stacked_input.view(batch_size * seq_len, 2, width, heigth)
         
