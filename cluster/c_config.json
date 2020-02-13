@@ -12,14 +12,14 @@
   ,
   "network": {
     "encoder": {
-      "dropout": 0.5,
-      "in_channels": 3,
+      "dropout": 0,
+      "in_channels": 2,
       "num_layers" : 2,
       "kernel_size": 3,
       "channel_size": 64
     },
     "recursive": {
-      "dropout": 0.5,
+      "dropout": 0,
       "attention": false,
       "alpha_residual": "padding",
       "in_channels": 64,
@@ -27,7 +27,7 @@
       "kernel_size": 3
     },
     "decoder": {
-      "dropout": 0.5,
+      "dropout": 0,
       "deconv": {
         "in_channels": 64,
         "kernel_size": 3,
@@ -45,7 +45,7 @@
   "training": {
     "num_epochs": 400,
     "batch_size": 16,
-    "data_limit": 4,
+    "data_limit": -1,
 
     "min_L": 32,
     "n_views": 32,
@@ -53,7 +53,7 @@
     "crop": 3,
 
     "weighted_order": "binary",
-    "extra_channel": true,
+    "extra_channel": false,
     "anchor": "median",
 
     "lr": 0.0007,
@@ -62,9 +62,9 @@
 
     "load_lr_maps": false,
     "beta": 50.0,
-    "lr_weights": "smooth_routing",
+    "lr_weights": "clearance",
     "sorted_k": false,
-    "outlier": "replace",
+    "outlier": "keep",
 
     "weight_maps_type": "routing",
 
