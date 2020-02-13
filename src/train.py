@@ -150,7 +150,6 @@ def trainAndGetBestModel(fusion_model, regis_model, optimizer, dataloaders, base
     beta = config["training"]["beta"]
 
     weighted_order = config["training"]["weighted_order"]
-    weighted_pixels = config["training"]["weighted_pixels"]
     extra_channel = config["training"]["extra_channel"]
     anchor = config["training"]["anchor"]
 
@@ -209,7 +208,7 @@ def trainAndGetBestModel(fusion_model, regis_model, optimizer, dataloaders, base
             # alphas can be binary or based on weights, default is binary
             if weighted_order == 'frame_weights':
                 alphas = weights
-            elif weighted_order == 'pixels_weights'
+            elif weighted_order == 'pixels_weights':
                 alphas = weight_maps
 
             srs = fusion_model(lrs, alphas, weight_maps, extra_channel=extra_channel, anchor=anchor)  # fuse multi frames (B, 1, 3*W, 3*H)
@@ -244,12 +243,14 @@ def trainAndGetBestModel(fusion_model, regis_model, optimizer, dataloaders, base
             hrs = hrs.numpy()
             hr_maps = hr_maps.numpy()
 
-            if weighted_order:
+            if weighted_order == 'fram_weights':
                 alphas = weights
-            if weighted_pixels:
+            elif weighted_order == 'pixels_weights':
                 alphas = weight_maps
 
-            srs = fusion_model(lrs, alphas, weight_maps, pixels_weights=weighted_pixels)[:, 0]  # fuse multi frames (B, 1, 3*W, 3*H)
+            # fuse multi frames (B, 1, 3*W, 3*H)
+            srs = fusion_model(lrs, alphas, weight_maps,
+                               extra_channel=extra_channel, anchor=anchor)[:, 0]  
 
             # compute ESA score
             srs = srs.detach().cpu().numpy()
@@ -278,12 +279,14 @@ def trainAndGetBestModel(fusion_model, regis_model, optimizer, dataloaders, base
             hrs = hrs.numpy()
             hr_maps = hr_maps.numpy()
 
-            if weighted_order:
+            if weighted_order == 'frame_weights':
                 alphas = weights
-            if weighted_pixels:
+            elif weighted_order == 'pixels_weights':
                 alphas = weight_maps
-
-            srs = fusion_model(lrs, alphas, weight_maps, pixels_weights=weighted_pixels)[:, 0]  # fuse multi frames (B, 1, 3*W, 3*H)
+            
+            # fuse multi frames (B, 1, 3*W, 3*H)
+            srs = fusion_model(lrs, alphas, weight_maps,
+                               extra_channel=extra_channel, anchor=anchor)[:, 0]
 
             # compute ESA score
             srs = srs.detach().cpu().numpy()

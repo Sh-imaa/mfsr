@@ -20,8 +20,8 @@
     },
     "recursive": {
       "dropout": 0.5,
-      "attention": true,
-      "alpha_residual": "padding",
+      "attention": false,
+      "alpha_residual": "weighted",
       "in_channels": 64,
       "num_layers" : 2,
       "kernel_size": 3
@@ -52,12 +52,8 @@
     "n_workers": 4,
     "crop": 3,
 
-    // if to use weights instead of binary alphas
-    // options are frame_weights/ pixels_weights the default is just binary
-    "weighted_order": "frame_weights",
-    // if to use pixel-wise weights as an extra channel in the encoder
-    "extra_channel":false,
-    // if to use the "median" frame as an anchor or weighted_anchor for weighted average
+    "weighted_order": "pixels_weights",
+    "extra_channel": false,
     "anchor": "median",
 
     "lr": 0.0007,

@@ -127,48 +127,29 @@ class RecuversiveNet(nn.Module):
             bob = x[:, half_len:nviews - parity] # second half hidden states (B, L/2, C, W, H)
             bob = torch.flip(bob, [1])
 
-            if self.attention == True:
-                alphas_alice = alphas[:, :half_len]
-                alphas_bob = alphas[:, half_len:nviews - parity]
-                alphas_bob = torch.flip(alphas_bob, [1])
+            alphas_alice = alphas[:, :half_len]
+            alphas_bob = alphas[:, half_len:nviews - parity]
+            alphas_bob = torch.flip(alphas_bob, [1])
 
+            if self.attention == True:
                 alice_and_bob = torch.cat([alice, alphas_alice, bob, alphas_bob], 2)
                 alice_and_bob = alice_and_bob.view(-1, (2 * channels + 2), width, heigth)
                 x = self.fuse(alice_and_bob)
                 x = x.view(batch_size, half_len, channels, width, heigth)
-                alphas_ = torch.stack([alphas_alice, alphas_bob])
-                if self.alpha_residual == 'padding':
-                    x = alice + alphas_bob * x
-                alphas = torch.max(alphas_, dim=0)[0]
-
             else:
                 alice_and_bob = torch.cat([alice, bob], 2)  # concat hidden states accross channels (B, L/2, 2*C, W, H)
                 alice_and_bob = alice_and_bob.view(-1, 2 * channels, width, heigth)
                 x = self.fuse(alice_and_bob)
                 x = x.view(batch_size, half_len, channels, width, heigth)  # new hidden states (B, L/2, C, W, H)
 
-                if self.alpha_residual == 'padding': # skip connect padded views (alphas_bob = 0)
-                    alphas_alice = alphas[:, :half_len]
-                    alphas_bob = alphas[:, half_len:nviews - parity]
-                    alphas_bob = torch.flip(alphas_bob, [1])
-                    x = alice + alphas_bob * x
-                    alphas = alphas_alice
+            if self.alpha_residual == 'padding': # skip connect padded views (alphas_bob = 0)
+                x = alice + alphas_bob * x
+                alphas = alphas_alice
 
-                elif self.alpha_residual == 'weighted':
-                    alphas_alice = alphas[:, :half_len]
-                    alphas_bob = alphas[:, half_len:nviews - parity]
-                    alphas_bob = torch.flip(alphas_bob, [1])
-                    alphas_ = torch.stack([alphas_alice, alphas_bob])
-                    x = alice * alphas_alice + bob * alphas_bob + x * torch.min(alphas_, dim=0)[0]
-                    alphas = torch.max(alphas_, dim=0)[0]
-
-                elif self.alpha_residual == 'weight_maps':
-                    alphas_alice = alphas[:, :half_len]
-                    alphas_bob = alphas[:, half_len:nviews - parity]
-                    alphas_bob = torch.flip(alphas_bob, [1])
-                    alphas_ = torch.stack([alphas_alice, alphas_bob])
-                    x = alice * alphas_alice + bob * alphas_bob + x * torch.min(alphas_, dim=0)[0]
-                    alphas = torch.max(alphas_, dim=0)[0]
+            elif self.alpha_residual == 'weighted':
+                alphas_ = torch.stack([alphas_alice, alphas_bob])
+                x = alice * alphas_alice + bob * alphas_bob + x * torch.min(alphas_, dim=0)[0]
+                alphas = torch.max(alphas_, dim=0)[0]
 
             nviews = half_len
             parity = nviews % 2
@@ -241,23 +222,23 @@ class HRNet(nn.Module):
 
         batch_size, seq_len, heigth, width = lrs.shape
         lrs = lrs.view(-1, seq_len, 1, heigth, width)
+
         # check if alphas is a map or single number
-        if alphas.shape[-1] > 1:
+        if len(alphas.shape) > 2:
             alphas = alphas.view(-1, seq_len, 1, heigth, width)
         else:
             alphas = alphas.view(-1, seq_len, 1, 1, 1)
 
         # reference image aka anchor, shared across multiple views
         if anchor == 'weighted_anchor':
-            weight_maps = weight_maps.view(-1, seq_len, 1, heigth, width)
-            refs = torch.mul(weight_maps, lrs).mean(dim=1)
+            refs = torch.mul(weight_maps.unsqueeze(2), lrs).mean(dim=1)
             refs = refs.repeat(1, seq_len, 1, 1).unsqueeze(2)
         else:
             refs, _ = torch.median(lrs[:, :9], 1, keepdim=True) 
             refs = refs.repeat(1, seq_len, 1, 1, 1)
 
         if extra_channel:
-            stacked_input = torch.cat([lrs, refs, weight_maps], 2)
+            stacked_input = torch.cat([lrs, refs, weight_maps.unsqueeze(2)], 2)
             stacked_input = stacked_input.view(batch_size * seq_len, 3, width, heigth)
         else:
             stacked_input = torch.cat([lrs, refs], 2) # tensor (B, L, 2*C_in, W, H)
