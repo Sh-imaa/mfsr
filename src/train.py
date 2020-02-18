@@ -211,7 +211,9 @@ def trainAndGetBestModel(fusion_model, regis_model, optimizer, dataloaders, base
             elif weighted_order == 'pixels_weights':
                 alphas = weight_maps
 
-            srs = fusion_model(lrs, alphas, weight_maps, extra_channel=extra_channel, anchor=anchor)  # fuse multi frames (B, 1, 3*W, 3*H)
+            # fuse multi frames (B, 1, 3*W, 3*H)
+            srs = fusion_model(lrs, alphas, weight_maps,
+                               extra_channel=extra_channel, anchor=anchor)
 
             # Register batch wrt HR
             shifts = register_batch(regis_model,
@@ -243,7 +245,7 @@ def trainAndGetBestModel(fusion_model, regis_model, optimizer, dataloaders, base
             hrs = hrs.numpy()
             hr_maps = hr_maps.numpy()
 
-            if weighted_order == 'fram_weights':
+            if weighted_order == 'frame_weights':
                 alphas = weights
             elif weighted_order == 'pixels_weights':
                 alphas = weight_maps

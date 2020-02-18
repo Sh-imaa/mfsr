@@ -148,6 +148,10 @@ class RecuversiveNet(nn.Module):
 
             elif self.alpha_residual == 'weighted':
                 alphas_ = torch.stack([alphas_alice, alphas_bob])
+                alphas_sum = alphas_.sum(dim=0)
+                alphas_sum[alphas_sum == 0] = 1
+                alphas_alice /= alphas_sum
+                alphas_bob /= alphas_sum 
                 x = alice * alphas_alice + bob * alphas_bob + x * torch.min(alphas_, dim=0)[0]
                 alphas = torch.max(alphas_, dim=0)[0]
 

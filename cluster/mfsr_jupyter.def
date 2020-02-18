@@ -1,0 +1,24 @@
+BootStrap: docker
+From: ubuntu:18.04
+
+# To run in this shell pointing to data at some path, you can execute
+# singularity shell -B /path/to/data mfsr.sif
+#
+# This recipe can be built on any machine where you are root, the command
+# sudo singularity build mfsr.sif mfsr.def
+
+%post
+    apt -y update
+    apt -y upgrade
+    apt -y install software-properties-common
+    apt -y install python3-pip
+    apt -y install build-essential libssl-dev libffi-dev python3-dev
+    apt -y install nano vim
+    apt-get install -y libsm6 libxext6 libxrender-dev
+
+    export LC_ALL=C.UTF-8
+    pip3 install numpy sklearn scikit-image
+    pip3 install addict
+    pip3 install jupyter
+    pip3 install graphql-core==2.0 wandb Pillow==5.4 pyyaml seaborn
+    pip3 install --no-cache-dir torch torchvision matplotlib ipython tqdm tensorboardX
