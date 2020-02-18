@@ -1,7 +1,7 @@
 {
   "paths": {
     "prefix": "$SLURM_TMPDIR/data/probav_data/",
-    "checkpoint_dir": "models"
+    "checkpoint_dir": "$SCRATCH/mfsr/models"
   },
 
   "misc": {
