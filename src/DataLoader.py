@@ -154,9 +154,9 @@ def read_imageset(imset_dir, create_patches=False, patch_size=64, seed=None,
 
     if sorted_k and (top_k is not None) and (top_k > 0):
         top_k = min(top_k, len(idx_names))
-        i_clear_sorted = np.argsort(weights)[::-1][:top_k]  # max to min
-        weights = weights[i_clear_sorted]
-        idx_names = idx_names[i_clear_sorted]
+        i_samples = np.argsort(weights)[::-1][:top_k]  # max to min
+        weights = weights[i_samples]
+        idx_names = idx_names[i_samples]
     
     elif top_k is not None and top_k > 0:
         top_k = min(top_k, len(idx_names))
@@ -165,9 +165,9 @@ def read_imageset(imset_dir, create_patches=False, patch_size=64, seed=None,
         weights = weights[i_samples]
 
     elif sorted_k:
-        i_clear_sorted = np.argsort(weights)[::-1]  # max to min
-        weights = weights[i_clear_sorted]
-        idx_names = idx_names[i_clear_sorted]
+        i_samples = np.argsort(weights)[::-1]  # max to min
+        weights = weights[i_samples]
+        idx_names = idx_names[i_samples]
 
 
     if outlier == "remove":
@@ -223,6 +223,8 @@ def read_imageset(imset_dir, create_patches=False, patch_size=64, seed=None,
     else:
         weight_maps /= weight_maps.max(axis=0)
 
+    weight_maps = weight_maps[i_samples]
+
     if create_patches:
         if seed is not None:
             np.random.seed(seed)
@@ -233,19 +235,30 @@ def read_imageset(imset_dir, create_patches=False, patch_size=64, seed=None,
         y = np.random.randint(low=0, high=max_y)
         lr_images = get_patch(lr_images, x, y, patch_size)  # broadcasting slicing coordinates across all images
         weight_maps = get_patch(weight_maps, x, y, patch_size)
+
         hr_map = get_patch(hr_map, x * 3, y * 3, patch_size * 3)
 
         if hr is not None:
             hr = get_patch(hr, x * 3, y * 3, patch_size * 3)
 
     lock.release()
+    if isfile(join(imset_dir, 'clearance.npy')):
+        raw_cl_weight = np.load(join(imset_dir, 'clearance.npy'))
+        raw_cl_weight = raw_cl_weight[i_samples]
+    if isfile(join(imset_dir, 'routing_weights.npy')):
+        raw_r_weight = np.load(join(imset_dir, 'routing_weights.npy'))
+        raw_r_weight = raw_r_weight[i_samples]
+            
     # Organise all assets into an ImageSet (OrderedDict)
     imageset = ImageSet(name=basename(imset_dir),
                         lr=np.array(lr_images),
                         hr=hr,
                         hr_map=hr_map,
                         weights=(weights / weights.max()),
+                        raw_weights=weights,
                         weight_map=weight_maps,
+                        raw_cl_weight=raw_cl_weight,
+                        raw_r_weight=raw_r_weight,
                         )
 
     return imageset

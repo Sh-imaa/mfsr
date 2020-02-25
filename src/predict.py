@@ -30,7 +30,7 @@ def get_sr_and_score(imset, model, min_L=16, baseline_path=None):
     
     if imset.__class__ is ImageSet:
         collator = collateFunction(min_L=min_L)
-        lrs, alphas, _, hrs, hr_maps, names = collator([imset])
+        lrs, alphas, _, _, hrs, hr_maps, names = collator([imset])
     elif isinstance(imset, tuple):  # imset is a tuple of batches
         lrs, alphas, hrs, hr_maps, names = imset
 
