@@ -265,6 +265,13 @@ def trainAndGetBestModel(fusion_model, regis_model, optimizer, dataloaders, base
                     val_score += ESA / shift_cPSNR(np.clip(srs[i], 0, 1), hrs[i], hr_maps[i])
 
         val_score /= len(dataloaders['val'].dataset)
+
+        if best_score > val_score:
+            torch.save(fusion_model.state_dict(),
+                       os.path.join(checkpoint_dir_run, 'HRNet.pth'))
+            torch.save(regis_model.state_dict(),
+                       os.path.join(checkpoint_dir_run, 'ShiftNet.pth'))
+            best_score = val_score
         
         hr, sr = torch.from_numpy(hrs[0]), torch.from_numpy(srs[0])
         hr_sr = torch.stack([hr, sr]).unsqueeze(1)
