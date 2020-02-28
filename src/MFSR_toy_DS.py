@@ -1,3 +1,5 @@
+import random
+
 import numpy as np
 import cv2
 
@@ -8,7 +10,7 @@ import torchvision.transforms as T
 def random_homography(img, scale=0.02):
     np_img = np.array(img)
     np_img = np.moveaxis(np_img, 0, -1)
-    w, h = np_img.shape[1:3]
+    w, h = np_img.shape[-2:]
     points = np.array([(0, 0), (0, h), (w, 0), (w, h)])
     points_trans = points + np.random.normal(size=points.shape, scale=scale)
 
@@ -20,7 +22,7 @@ def random_homography(img, scale=0.02):
 
 def trans_and_scale(img, rot=10, trans=(0.05, 0.05),
                     homography=False, random_interpolation=False):
-    h, w = np.array(img).shape[1:3]
+    w, h = np.array(img).shape[-2:]
     transformation = []
     trans_interpolation = 2
     if homography:
@@ -42,7 +44,7 @@ class MFSRDataSet(Dataset):
                  blur=True, to_grey=False, homography=False):
         super().__init__()
         # same set of images whenever an instantiation happens
-        numpy.random.seed(29)
+        np.random.seed(29)
         random.seed(29)
         self.data = data
         self.views = views
@@ -57,7 +59,7 @@ class MFSRDataSet(Dataset):
 
         if self.to_grey:
           # get first channel instead of grey
-          orig_img = orig_img[0].unsqueeze(0)
+          orig_img = orig_img[0]
         
         if self.blur:
           img = np.array(orig_img)
